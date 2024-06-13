@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "figshare-import"
+name = "figshare_import"
 version = "0.1.0"
 description = "Import and convert Figshare data and records to a DataONE repository"
 authors = ["Ian Nesbitt <nesbitt@nceas.ucsb.edu>"]
@@ -11,6 +11,7 @@ python = "^3.9"
 "dataone.common" = "^3.5.2"
 "dataone.libclient" = "^3.5.2"
 pyld = {git = "https://github.com/datadavev/pyld.git", tag = "ddv-2.1.0"}
+#"pyld" = "^2.0.4"
 
 [tool.poetry.group.dev.dependencies]
 Sphinx = "^7.3.7"
