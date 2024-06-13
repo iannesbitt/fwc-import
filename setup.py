@@ -26,8 +26,8 @@ setuptools.setup(
     },
     entry_points = {
         'console_scripts': [
-            'mnqdc=figshare_import.run:main',
-            'testmnqdc=figshare_import.test:main'
+            'figshareimport=figshare_import.run:main',
+            'testfigshareimport=figshare_import.test:main'
         ],
     },
     python_requires='>=3.9, <4.0',
