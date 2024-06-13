@@ -1,15 +1,15 @@
-## Product: This is a dataone tagline for the product
+## figshare-import: Import and convert Figshare data and records to a DataONE repository
 
-- **Authors**: Last, First (ORCID); ...
+- **Authors**: Nesbitt, Ian ([http://orcid.org/0000-0001-5828-6070](http://orcid.org/0000-0001-5828-6070))
 - **License**: [Apache 2](http://opensource.org/licenses/Apache-2.0)
-- [Package source code on GitHub](https://github.com/DataONEorg/reponame)
-- [**Submit Bugs and feature requests**](https://github.com/DataONEorg/reponame/issues)
+- [Package source code on GitHub](https://github.com/DataONEorg/figshare-import)
+- [**Submit Bugs and feature requests**](https://github.com/DataONEorg/figshare-import/issues)
 - Contact us: support@dataone.org
 - [DataONE discussions](https://github.com/DataONEorg/dataone/discussions)
 
-*Product overview goes here.* Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+This software is meant to 
 
-DataONE in general, and HashStore in particular, are open source, community projects.  We [welcome contributions](./CONTRIBUTING.md) in many forms, including code, graphics, documentation, bug reports, testing, etc.  Use the [DataONE discussions](https://github.com/DataONEorg/dataone/discussions) to discuss these contributions with us.
+DataONE in general, and figshare-import in particular, are open source, community projects.  We [welcome contributions](./CONTRIBUTING.md) in many forms, including code, graphics, documentation, bug reports, testing, etc.  Use the [DataONE discussions](https://github.com/DataONEorg/dataone/discussions) to discuss these contributions with us.
 
 
 ## Documentation
@@ -28,8 +28,6 @@ take a longer time to run (relating to the storage of large files) - to execute 
 `pytest --run-slow`. To see detailed
 
 ## Usage Example
-
-To view more details about the Public API - see 'hashstore.py` interface documentation
 
 ```py
 from product import Product
@@ -59,10 +57,7 @@ limitations under the License.
 Work on this package was supported by:
 
 - DataONE Network
-- Arctic Data Center: NSF-PLR grant #2042102 to M. B. Jones, A. Budden, M. Schildhauer, and J. Dozier
 
 Additional support was provided for collaboration by the National Center for Ecological Analysis and Synthesis, a Center funded by the University of California, Santa Barbara, and the State of California.
 
 [![DataONE_footer](https://user-images.githubusercontent.com/6643222/162324180-b5cf0f5f-ae7a-4ca6-87c3-9733a2590634.png)](https://dataone.org)
-
-[![nceas_footer](https://www.nceas.ucsb.edu/sites/default/files/2020-03/NCEAS-full%20logo-4C.png)](https://www.nceas.ucsb.edu)
