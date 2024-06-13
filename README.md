@@ -7,7 +7,7 @@
 - Contact us: support@dataone.org
 - [DataONE discussions](https://github.com/DataONEorg/dataone/discussions)
 
-This software is meant to 
+This software is meant to provide transport of data and translation of metadata from Figshare's json format to a DataONE Metacat instance. This workflow may be run during repository setup to move a large corpus from Figshare into a new DataONE repository.
 
 DataONE in general, and figshare-import in particular, are open source, community projects.  We [welcome contributions](./CONTRIBUTING.md) in many forms, including code, graphics, documentation, bug reports, testing, etc.  Use the [DataONE discussions](https://github.com/DataONEorg/dataone/discussions) to discuss these contributions with us.
 
