@@ -1,0 +1,7 @@
+{
+    "rightsholder_orcid": "http://orcid.org/0000-0002-9708-2406",
+    "nodeid": "urn:node:mnTestKNB",
+    "mnurl": "https://dev.nceas.ucsb.edu/knb/d1/mn/",
+    "metadata_json": "~/figshare-import/article-details.json",
+    "data_root": "/mnt/ceph/repos/si/figshare/FIG-12/"
+}
