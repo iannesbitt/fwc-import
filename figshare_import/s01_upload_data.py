@@ -278,6 +278,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                         if uploads[doi][uf]['filename'] == f['name']:
                             prev_upls += 1
                             del files[fn]
+                        fn += 1
                 L.info(f'Found {prev_upls} files that were already uploaded associated with {doi}')
             try:
                 if len(files) > 0:
