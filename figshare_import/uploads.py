@@ -11,6 +11,7 @@ def save_uploads(uploads: dict, fp: Path='./uploads.json'):
         with open(fp, 'w') as f:
             json.dump(uploads, fp=f, indent=2)
         L.info(f'Wrote {l} uploads to {fp}')
+        L.debug(f'Saved upload dump:\n{json.dumps(uploads,indent=2)}')
         return fp
     else:
         L.error(f'Could not find folder to write uploads file! Dumping them here:\n{json.dumps(uploads, indent=2)}')
@@ -29,6 +30,7 @@ def load_uploads(fp: Path='./uploads.json'):
                 uploads = {}
         l = len(uploads)
         L.info(f'Loaded info for {l} uploads.')
+        L.debug(f'Loaded upload dump:\n{json.dumps(uploads,indent=2)}')
         return uploads
     else:
         L.error('Could not find uploads file!')
