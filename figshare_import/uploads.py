@@ -8,10 +8,8 @@ def save_uploads(uploads: dict, fp: Path='./uploads.json'):
     L = getLogger(__name__)
     l = len(uploads)
     if fp.parent.exists():
-        if fp.exists():
-            json.dump(uploads, fp=fp, indent=2)
-        else:
-            json.dump(uploads, fp=fp, indent=2)
+        with open(fp, 'w') as f:
+            json.dump(uploads, fp=f, indent=2)
         L.info(f'Wrote {l} uploads to {fp}')
         return fp
     else:
@@ -23,7 +21,12 @@ def load_uploads(fp: Path='./uploads.json'):
     L = getLogger(__name__)
     if fp.exists():
         L.info(f'Loading uploads from {fp}')
-        uploads = json.load(fp=fp)
+        with open(fp, 'r') as f:
+            try:
+                uploads = json.load(fp=f)
+            except json.JSONDecodeError as e:
+                L.warning(f'Caught JSONDecodeError: {e}. This probably happened because there is no file to read. Continuing with empty dict...')
+                uploads = {}
         l = len(uploads)
         L.info(f'Loaded info for {l} uploads.')
         return uploads

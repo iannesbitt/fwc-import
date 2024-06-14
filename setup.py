@@ -7,7 +7,7 @@ setuptools.setup(
     author='Ian Nesbitt',
     author_email='nesbitt@nceas.ucsb.edu',
     name='figshare_import',
-    version='0.0.1',
+    version='0.1.0',
     description='DataONE Figshare Qualified Dublin Core staging workflow',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -26,7 +26,7 @@ setuptools.setup(
     },
     entry_points = {
         'console_scripts': [
-            'figshareimport=figshare_import.run:main',
+            'figshareimport=figshare_import.s01_upload_data:main',
             'testfigshareimport=figshare_import.test:main'
         ],
     },

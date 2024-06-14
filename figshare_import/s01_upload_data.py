@@ -15,14 +15,18 @@ LOGCONFIG = CONFIG_LOC.joinpath('log/config.json')
 with open(LOGCONFIG, 'r') as lc:
     LOGGING_CONFIG = json.load(lc)
 dictConfig(LOGGING_CONFIG)
+WORK_LOC = Path('~/figshare-import/').expanduser().absolute()
 
 global DATA_ROOT
 DATA_ROOT = Path('')
 
-try:
-    from .defs import fmts
-except:
-    fmts = {'.xls': 'application/vnd.ms-excel','.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','.doc': 'application/msword','.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document','.ppt': 'application/vnd.ms-powerpoint','.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation','.pdf': 'application/pdf','.txt': 'text/plain','.zip': 'application/zip','.ttl': 'text/turtle','.md': 'text/markdown','.rmd': 'text/x-rmarkdown','.csv': 'text/csv','.bmp': 'image/bmp','.gif': 'image/gif','.jpg': 'image/jpeg','.jpeg': 'image/jpeg','.jp2': 'image/jp2','.png': 'image/png','.tif': 'image/geotiff','.svg': 'image/svg+xml','.nc': 'netCDF-4','.py': 'application/x-python','.hdf': 'application/x-hdf','.hdf5': 'application/x-hdf5','.tab': 'text/plain','.gz': 'application/x-gzip','.html': 'text/html','.htm': 'text/html','.xml': 'text/xml','.ps': 'application/postscript','.tsv': 'text/tsv','.rtf': 'application/rtf','.mp4': 'video/mp4','.r': 'application/R','.rar': 'application/x-rar-compressed','.fasta': 'application/x-fasta','.fastq': 'application/x-fasta','.fas': 'application/x-fasta','.gpx': 'application/gpx+xml'}
+from .defs import fmts
+from .uploads import load_uploads, save_uploads
+from .parse_names import parse_name
+# try:
+#     from .defs import fmts
+# except:
+#     fmts = {'.xls': 'application/vnd.ms-excel','.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','.doc': 'application/msword','.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document','.ppt': 'application/vnd.ms-powerpoint','.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation','.pdf': 'application/pdf','.txt': 'text/plain','.zip': 'application/zip','.ttl': 'text/turtle','.md': 'text/markdown','.rmd': 'text/x-rmarkdown','.csv': 'text/csv','.bmp': 'image/bmp','.gif': 'image/gif','.jpg': 'image/jpeg','.jpeg': 'image/jpeg','.jp2': 'image/jp2','.png': 'image/png','.tif': 'image/geotiff','.svg': 'image/svg+xml','.nc': 'netCDF-4','.py': 'application/x-python','.hdf': 'application/x-hdf','.hdf5': 'application/x-hdf5','.tab': 'text/plain','.gz': 'application/x-gzip','.html': 'text/html','.htm': 'text/html','.xml': 'text/xml','.ps': 'application/postscript','.tsv': 'text/tsv','.rtf': 'application/rtf','.mp4': 'video/mp4','.r': 'application/R','.rar': 'application/x-rar-compressed','.fasta': 'application/x-fasta','.fastq': 'application/x-fasta','.fas': 'application/x-fasta','.gpx': 'application/gpx+xml'}
 
 split_str = '<qdc:qualifieddc '
 rpt_txt = """
@@ -56,20 +60,7 @@ def get_config():
     with open(CONFIG, 'r') as lc:
         config = json.load(lc)
     DATA_ROOT = Path(config['data_root'])
-    return config['rightsholder_orcid'], config['nodeid'], config['mnurl'], config['metadata_json']
-
-
-def parse_qdc_file(qdc_file):
-    """
-    Parse the QDC file. Get rid of the wrapper tags, then split on the
-    split string.
-    Note that each QDC string will be missing the split string, and it
-    will need to be added back in a subsequent step.
-    """
-    with open(qdc_file, 'r') as f:
-        qdcb = f.read()
-        qdcs = qdcb.split('<wrapper>')[1].split('</wrapper>')[0].split(f'\n{split_str}')
-    return qdcs
+    return config['rightsholder_orcid'], config['nodeid'], config['mnurl'], str(Path(config['metadata_json']).expanduser())
 
 
 def generate_sys_meta(pid: str, sid: str, format_id: str, size: int, md5, now, orcid: str):
@@ -120,7 +111,7 @@ def generate_system_metadata(pid: str, sid: str, format_id: str, science_object:
     md5 = md5.hexdigest()
     now = datetime.datetime.now()
     sys_meta = generate_sys_meta(pid, sid, format_id, size, md5, now, orcid)
-    return sys_meta
+    return sys_meta, md5, size
 
 
 def generate_public_access_policy():
@@ -160,11 +151,7 @@ def search_versions(doi: str):
     global DATA_ROOT
     L = getLogger(__name__)
     doidir = Path(DATA_ROOT / doi)
-    flist = []
-    if doidir.exists():
-        for f in doidir.glob('*'):
-            flist.append(f)
-    else:
+    if not doidir.exists():
         # we need to figure out where the closest version is (or if it exists?)
         try:
             [doiroot, version] = doidir.__str__().split('.v')
@@ -176,18 +163,7 @@ def search_versions(doi: str):
                 moddir = Path(DATA_ROOT / f'{doiroot}.v{version}')
                 L.info(f'Trying {moddir}')
                 if moddir.exists():
-                    versions += 1
-                    fi = 0
-                    for f in moddir.glob('*'):
-                        flist.append(f)
-                        fi += 1
-                    L.info(f'Found {fi} existing files in version {version} directory')
-                    if version > 0:
-                        L.info('Looking for previous versions...')
-                        continue
-                    else:
-                        L.info(f'Found {versions} versions of doi root {doiroot}')
-                        break
+                    return moddir
                 else:
                     if version > 0:
                         continue
@@ -198,93 +174,64 @@ def search_versions(doi: str):
             L.info(f'{doi} has no version.')
         except Exception as e:
             L.error(f'{repr(e)} has occurred: {e}')
-    return flist
+    return doidir
 
 
-def create_package(orcid: str, doi: str, qdc_bytes: str, client: MemberNodeClient_2_0):
+def get_filepaths(files: list, doidir: Path):
     """
-    Create a data package in 6 steps:
+    """
+    paths = []
+    for f in files:
+        p = Path(doidir / f['name'])
+        if p.exists():
+            paths.append(p)
+        else:
+            for pa in Path(p.parent / p.stem).glob('*'):
+                paths.append(pa)
+    return paths
 
-    1. Search the DOI dir structure and generate sysmeta for each data object
-    2. Upload each data object and its sysmeta
-    3. Generate sysmeta for QDC metadata object
-    4. Upload metadata object and its sysmeta
-    5. Generate sysmeta for resource map
-    6. Upload resource map and its sysmeta
 
-    If an error is encountered, delete all package PIDs from the MN and raise
-    an error.
+def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0):
+    """
     """
     L = getLogger(__name__)
-    qdc_pid, data_pids, ore_pid = None, None, None
-    try:
-        # Create and upload the EML
-        qdc_pid = str(uuid.uuid4())
-        L.debug(f'{doi} Generating sysmeta for metadata object')
-        meta_sm = generate_system_metadata(pid=qdc_pid,
-                                           sid=doi,
-                                           format_id='http://ns.dataone.org/metadata/schema/onedcx/v1.0',
-                                           science_object=qdc_bytes,
-                                           orcid=orcid)
-        L.debug(f'{doi} Uploading metadata object')
-        rmd = client.create(qdc_pid, qdc_bytes, meta_sm)
-        L.debug(f'{doi} Received response for metadata object upload:\n{rmd}')
-        # Get and upload the data
-        doidir = Path(DATA_ROOT / doi)
-        files = []
-        if doidir.exists():
-            files = doidir.glob('*')
-        else:
-            L.info(f'{doidir} does not exist. Trying other versions...')
-            files = search_versions(doi)
-            if len(files) == 0:
-                raise FileNotFoundError(f'{doi} No files found for this version chain!')
-        # keep track of data pids for resource mapping
-        data_pids = []
-        for f in files:
+    data_pids = None
+    sm_dict = {}
+    # Create and upload the EML
+    # Get and upload the data
+    doidir = Path(DATA_ROOT / doi)
+    if not doidir.exists():
+        L.info(f'{doidir} does not exist. Trying other versions...')
+        doidir = search_versions(doi)
+    files = get_filepaths(doidir=doidir, files=files)
+    flen = len(files)
+    if flen == 0:
+        raise FileNotFoundError(f'{doi} No files found for this version chain!')
+    # keep track of data pids for resource mapping
+    data_pids = []
+    i = 0
+    for f in files:
+        i += 1
+        try:
             fformat = get_format(f)
             data_pid = str(uuid.uuid4())
-            data_pids.append(data_pid)
             L.debug(f'{doi} Reading {f.name}')
             data_bytes = f.read_bytes()
             L.debug(f'{doi} Generating sysmeta for {f.name}')
-            data_sm = generate_system_metadata(pid=data_pid,
-                                               sid=doi,
-                                               format_id=fformat,
-                                               science_object=data_bytes,
-                                               orcid=orcid)
-            L.info(f'{doi} Uploading {f.name}')
+            data_sm, md5, size = generate_system_metadata(pid=data_pid,
+                                                        sid=doi,
+                                                        format_id=fformat,
+                                                        science_object=data_bytes,
+                                                        orcid=orcid)
+            L.info(f'{doi} ({i}/{flen}) Uploading {f.name} ({round(size/(1024*1024), 1)} MB)')
             dmd = client.create(data_pid, data_bytes, data_sm)
             L.debug(f'{doi} Received response for science object upload:\n{dmd}')
-        # Create and upload the resource map
-        ore_pid = str(uuid.uuid4())
-        ore = createSimpleResourceMap(ore_pid, qdc_pid, data_pids)
-        L.debug(f'{doi} Generating sysmeta for resource map')
-        ore_meta = generate_system_metadata(pid=ore_pid,
-                                            sid=doi,
-                                            format_id='http://www.openarchives.org/ore/terms',
-                                            science_object=ore.serialize(),
-                                            orcid=orcid)
-        L.info(f'{doi} Uploading resource map')
-        mmd = client.create(ore_pid, ore.serialize(), ore_meta)
-        L.debug(f'{doi} Received response for resource map upload:\n{mmd}')
-    except Exception as e:
-        L.error(f'{doi} upload failed ({e})')
-        L.info(f'Removing objects...')
-        oi = 0
-        if ore_pid:
-            oi += 1
-            client.delete(pid=ore_pid)
-        if data_pids:
-            for pid in data_pids:
-                oi += 1
-                client.delete(pid=pid)
-        if qdc_pid:
-            oi += 1
-            client.delete(pid=qdc_pid)
-        L.info(f'Successfully deleted {oi} objects.')
-        raise BaseException(e)
-    return qdc_pid
+            data_pids.append(data_pid)
+            sm_dict[md5] = {'filename': f.name, 'size': size, 'doi': doi}
+        except Exception as e:
+            L.error(f'{doi} upload failed ({e})')
+            raise BaseException(e)
+    return sm_dict
 
 
 def report(succ: int, fail: int, finished_dois: list, failed_dois: list):
@@ -297,28 +244,49 @@ def report(succ: int, fail: int, finished_dois: list, failed_dois: list):
     L.info(rpt_txt % (fail, succ, failed_str, finished_str))
 
 
-def create_packages(qdcs: list, orcid: str, client: MemberNodeClient_2_0):
+def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, node: str):
     """
     Package creation and upload loop.
     """
     L = getLogger(__name__)
-    n = len(qdcs)
+    n = len(articles)
     i = 0
     er = 0
     succ_list = []
     err_list = []
+    uploads_loc = Path(WORK_LOC / f'{node}.json')
     try:
-        for qdc in qdcs:
+        uploads = load_uploads(uploads_loc)
+    except FileNotFoundError:
+        uploads = {}
+    try:
+        for article in articles:
             i += 1
-            if not qdc:
-                continue
-            qdc = f'{split_str}{qdc}'
-            L.debug(f'QDC:\n{qdc}')
-            doi = qdc.split('<dc:identifier>')[1].split('</dc:identifier>')[0]
+            L.debug(f'Article:\n{article}')
+            doi = article.get('doi')
             L.info(f'({i}/{n}) Working on {doi}')
+            files = article.get('files')
+            if not (uploads.get(doi)):
+                uploads[doi] = {}
+            else:
+                prev_upls = 0
+                for uf in uploads.get(doi):
+                    L.debug(f'uploaded file: {uploads[doi][uf]}')
+                    fn = 0
+                    for f in files:
+                        L.debug(f'known file: {files[fn]}')
+                        if uploads[doi][uf]['filename'] == f['name']:
+                            prev_upls += 1
+                            del files[fn]
+                L.info(f'Found {prev_upls} files that were already uploaded associated with {doi}')
             try:
-                qdc_pid = create_package(orcid, doi, qdc, client)
-                L.info(f'{doi} done. PID: {qdc_pid}')
+                if len(files) > 0:
+                    sm_dict = upload_files(orcid, doi, files, client)
+                    L.info(f'{doi} done. Uploaded {len(sm_dict)} files.')
+                    for fi in sm_dict:
+                        uploads[doi][fi] = sm_dict[fi]
+                else:
+                    L.info(f'No files to upload for {doi}')
                 succ_list.append(doi)
             except Exception as e:
                 er += 1
@@ -327,7 +295,15 @@ def create_packages(qdcs: list, orcid: str, client: MemberNodeClient_2_0):
     except KeyboardInterrupt:
         L.info('Caught KeyboardInterrupt; generating report...')
     finally:
-        report(succ=i-1-er, fail=er, finished_dois=succ_list, failed_dois=err_list)
+        save_uploads(uploads, fp=uploads_loc)
+        report(succ=i-er, fail=er, finished_dois=succ_list, failed_dois=err_list)
+
+
+def get_articles(metadata_json):
+    """
+    """
+    with open(metadata_json, 'r') as f:
+        return json.load(fp=f)['articles']
 
 
 def main():
@@ -345,9 +321,9 @@ def main():
     options: dict = {"headers": {"Authorization": "Bearer " + auth_token}}
     # Create the Member Node Client
     client: MemberNodeClient_2_0 = MemberNodeClient_2_0(mn_url, **options)
-    qdcs = parse_qdc_file(metadata_json)
-    L.info(f'Found {len(qdcs)} QDC records')
-    create_packages(qdcs=qdcs, orcid=orcid, client=client)
+    articles = get_articles(metadata_json)
+    L.info(f'Found {len(articles)} metadata records')
+    upload_manager(articles=articles, orcid=orcid, client=client, node=node)
     client._session.close()
 
 
