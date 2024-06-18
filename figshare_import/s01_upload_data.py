@@ -319,7 +319,10 @@ def main():
     L.info(f'Using {node} at {mn_url}')
     L.info(f'Root path: {DATA_ROOT}')
     # Set the token in the request header
-    options: dict = {"headers": {"Authorization": "Bearer " + auth_token}}
+    options: dict = {
+        "headers": {"Authorization": "Bearer " + auth_token},
+        "timeout_sec": 9999,
+        }
     # Create the Member Node Client
     client: MemberNodeClient_2_0 = MemberNodeClient_2_0(mn_url, **options)
     articles = get_articles(metadata_json)
