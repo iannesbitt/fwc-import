@@ -286,6 +286,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                     L.info(f'{doi} done. Uploaded {len(sm_dict)} files.')
                     for fi in sm_dict:
                         uploads[doi][fi] = sm_dict[fi]
+                    save_uploads(uploads, fp=uploads_loc)
                 else:
                     L.info(f'No files to upload for {doi}')
                 succ_list.append(doi)
