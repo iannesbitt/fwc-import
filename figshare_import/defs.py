@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 
 # a list of formats and their 
 fmts = {
@@ -43,3 +45,9 @@ fmts = {
     '.gpx': 'application/gpx+xml'
 }
 
+contextfile = Path('~/bin/figshare-import/figshare_import/manifest/figshare.jsonld').expanduser()
+if contextfile.exists():
+    with open(contextfile, 'r') as f:
+        CONTEXT = json.load(f)
+else:
+    CONTEXT = {}

@@ -66,3 +66,22 @@ def main():
         logging.error(e)
         
     return 0
+
+
+def frame(jld: dict, context: dict):
+    """
+    """
+    return pyld.jsonld.frame(jld, frame=context)
+
+
+def compact(jld: dict, context: dict):
+    """
+    """
+    return pyld.jsonld.compact(jld, ctx=context)
+
+
+def expand(jld: dict):
+    """
+    """
+    return pyld.jsonld.expand(jld)
+
