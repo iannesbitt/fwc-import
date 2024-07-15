@@ -1,6 +1,6 @@
 {
     "@context": {
-        "@type": "Dataset",
+        "type": "@type",
         "id": "@id",
         "schema":"http://schema.org/",
         "codemeta": "https://codemeta.github.io/terms/",
