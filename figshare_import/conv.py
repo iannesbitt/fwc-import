@@ -1,12 +1,15 @@
 import logging
+import pyld
 
-from metapype.eml.exceptions import MetapypeRuleError
-import metapype.eml.names as names
-import metapype.eml.validate as validate
-from metapype.model.node import Node
+# from metapype.eml.exceptions import MetapypeRuleError
+# import metapype.eml.names as names
+# import metapype.eml.validate as validate
+# from metapype.model.node import Node
+
+from .defs import define_context, TEMP_ARTICLE
 
 
-def main():
+def from_scratch_eml():
     """
     This would be a way to generate EML from scratch.
     We are ignoring this for now in order to use the codemeta crosswalk method
@@ -68,13 +71,13 @@ def main():
     return 0
 
 
-def frame(jld: dict, context: dict):
+def frame(jld: dict, context: dict=define_context()):
     """
     """
     return pyld.jsonld.frame(jld, frame=context)
 
 
-def compact(jld: dict, context: dict):
+def compact(jld: dict, context: dict=define_context()):
     """
     """
     return pyld.jsonld.compact(jld, ctx=context)
@@ -85,3 +88,8 @@ def expand(jld: dict):
     """
     return pyld.jsonld.expand(jld)
 
+def frame(article: dict=TEMP_ARTICLE, context: dict=define_context()):
+    """
+    """
+    article['@context'] = context
+    return pyld.jsonld.frame(article, frame=context)
