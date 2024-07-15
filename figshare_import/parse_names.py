@@ -16,7 +16,7 @@ def parse_name(fullname: str):
     if (given == None) and (family == None):
         nlist = fullname.title().split()
         family = nlist[-1]
-        if len(nlist) > 2:
+        if len(nlist) >= 2:
             given = nlist[0]
             for i in range(1, len(nlist)-1):
                 given = f'{given} {nlist[i]}'
