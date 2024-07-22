@@ -84,6 +84,48 @@ def define_context(context: str=DEFAULT_CONTEXT):
                 return json.load(f)
 
 
+SO_TEMPLATE = {
+    "@context": {
+        "@vocab": "https://schema.org/"
+    },
+    "type": "Dataset",
+    "conditionsOfAccess": "unrestricted",
+    "isAccessibleForFree": True,
+    "id": "",
+    "creator": {"@list": []},
+    "datePublished": "",
+    "description": {
+        "@type": "text",
+        "@value": ""
+    },
+    "distribution": [
+        {
+            "@type": "DataDownload",
+            "contentUrl": "",
+            "encodingFormat": ""
+        }
+    ],
+    "funder": [],
+    "identifier": {
+        "@type": "PropertyValue",
+        "propertyID": "https://registry.identifiers.org/registry/doi",
+        "url": "",
+        "value": ""
+    },
+    "keywords": [],
+    "license": {'type': "CreativeWork"},
+    "name": "",
+    "spatialCoverage": {
+        "geo": {
+            "@type": "GeoShape",
+            "box": "",
+            "name": ""
+        },
+    },
+    "version": "",
+}
+
+
 TEMP_ARTICLE = {
     "files": [
         {
