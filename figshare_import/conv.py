@@ -6,7 +6,7 @@ import pyld
 # import metapype.eml.validate as validate
 # from metapype.model.node import Node
 
-from .defs import define_context, TEMP_ARTICLE
+from .defs import define_context, TEMP_ARTICLE, SO_TEMPLATE
 
 
 def from_scratch_eml():
@@ -69,6 +69,47 @@ def from_scratch_eml():
         logging.error(e)
         
     return 0
+
+
+def to_so(article: dict):
+    """
+    """
+    so = SO_TEMPLATE
+    so['id'] = f"https://doi.org/{article['doi']}"
+    so['url'] = so['id']
+    for c in article['authors']:
+        creator = {}
+        creator['name'] = c['full_name']
+        orcid = c.get('orcid_id')
+        if orcid:
+            creator['url'] = f'http://orcid.org/{orcid}'
+        else:
+            url_name = c.get('url_name')
+            if url_name and (url_name != "_"):
+                creator['url'] = f'https://figshare.com/authors/{url_name}/{c['id']}'
+        so['creator']['@list'].append(creator)
+    so['datePublished'] = article['published_date']
+    so['description']['@value'] = article['description']
+    funders = article.get('funding_list')
+    f = 0
+    if len(funders) > 0:
+        so['funder'].append({
+            'type': 'Grant',
+            'funder': {
+                'name': funders[f].get('funder_name'),
+                'type': 'Organization'
+            },
+            'identifier': funders[f]['grant_code'],
+            'name': funders[f]['title'],
+        })
+        f += 1
+    so['identifier']['url'] = so['url']
+    so['identifier']['value'] = f'doi:{article['doi']}'
+    so['keywords'] = article['tags']
+    so['license']['text'] = article['license'].get('name')
+    so['license']['url'] = article['license'].get('url')
+    so['name'] = article['title']
+    so['version'] = article['version']
 
 
 def frame(jld: dict, context: dict=define_context()):
