@@ -94,7 +94,8 @@ def get_lat_lon(desc: str):
             for fw in ["'W", '\"W' '°W', '°', '<']:
                 try:
                     i3 = x[i2:i2+40].index(fw)+i2
-                    ll: LatLon3Tuple = parse3llh(x[i2:i3])
+                    sep = '    ' if '    ' in x[i2:i3] else ','
+                    ll: LatLon3Tuple = parse3llh(x[i2:i3], sep=sep)
                     if ll:
                         latlon.append(ll)
                         break
