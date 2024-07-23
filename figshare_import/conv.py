@@ -153,9 +153,11 @@ def to_so(article: dict):
     so['license']['url'] = article['license'].get('url')
     so['name'] = article['title']
     latlon = get_lat_lon(article['description'])
-    geoboxes = get_geoboxes(latlon)
+    geoboxes = get_geoboxes(latlon) if latlon else None
     if geoboxes:
         so['spatialCoverage']['geo'] = geoboxes
+    else:
+        del so['spatialCoverage']
     so['version'] = article['version']
 
 
