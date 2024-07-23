@@ -100,6 +100,7 @@ def get_lat_lon(desc: str):
                         break
                 except:
                     continue
+            x = x[i3:]
     return latlon
 
 
