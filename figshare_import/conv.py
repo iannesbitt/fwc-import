@@ -1,5 +1,7 @@
 import logging
 import pyld
+from pygeodesy.dms import parse3llh
+from pygeodesy.namedTuples import LatLon3Tuple
 
 # from metapype.eml.exceptions import MetapypeRuleError
 # import metapype.eml.names as names
@@ -71,6 +73,45 @@ def from_scratch_eml():
     return 0
 
 
+def get_lat_lon(desc: str):
+    """
+    Get latitude and longitude from description if they exist
+    """
+    latlon = None
+    if ("°" in desc) and (not "°C" in desc):
+        latlon = []
+        x = desc
+        while True:
+            ll = None
+            try:
+                i = x.index('°')
+            except:
+                break
+            try:
+                i2 = x[i-10:i].rindex('(')+i-10
+            except:
+                i2 = x[:i].rfind(' ')
+            for fw in ["'W", '\"W' '°W', '°', '<']:
+                try:
+                    i3 = x[i2:i2+40].index(fw)+i2
+                    ll: LatLon3Tuple = parse3llh(x[i2:i3])
+                    if ll:
+                        latlon.append(ll)
+                        break
+                except:
+                    continue
+    return latlon
+
+
+def get_geoboxes(latlon: list[LatLon3Tuple]):
+    """
+    """
+    geolist = []
+    for ll in latlon:
+        geolist.append({"@type": "GeoShape", "box": f"{ll.lat} {ll.lon} {ll.lat} {ll.lon}"})
+    return geolist
+
+
 def to_so(article: dict):
     """
     """
@@ -109,6 +150,10 @@ def to_so(article: dict):
     so['license']['text'] = article['license'].get('name')
     so['license']['url'] = article['license'].get('url')
     so['name'] = article['title']
+    latlon = get_lat_lon(article['description'])
+    geoboxes = get_geoboxes(latlon)
+    if geoboxes:
+        so['spatialCoverage']['geo'] = geoboxes
     so['version'] = article['version']
 
 

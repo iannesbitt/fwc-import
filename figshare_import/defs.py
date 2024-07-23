@@ -116,11 +116,12 @@ SO_TEMPLATE = {
     "license": {'type': "CreativeWork"},
     "name": "",
     "spatialCoverage": {
-        "geo": {
-            "@type": "GeoShape",
-            "box": "",
-            "name": ""
-        },
+        "geo": [
+            {
+                "@type": "GeoShape",
+                "box": "",
+            },
+        ]
     },
     "version": "",
 }
