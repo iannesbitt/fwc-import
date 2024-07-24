@@ -84,6 +84,16 @@ def define_context(context: str=DEFAULT_CONTEXT):
                 return json.load(f)
 
 
+SO_TYPES = {
+    "dataset": "Dataset",
+    "figure": "Dataset",
+    "preprint": "ScholarlyAricle",
+    "book": "Book",
+    "software": "SoftwareApplication",
+    "media": "MediaObject"
+}
+
+
 SO_TEMPLATE = {
     "@context": {
         "@vocab": "https://schema.org/"
