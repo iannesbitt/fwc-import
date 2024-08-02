@@ -138,144 +138,118 @@ SO_TEMPLATE = {
 
 
 TEMP_ARTICLE = {
-    "files": [
+      "files": [
         {
-        "id": 21729828,
-        "name": "Hall et al mature forest data used in Boeschoten et al_Framework species approach .xls",
-        "size": 400896,
-        "is_link_only": False,
-        "download_url": "https://ndownloader.figshare.com/files/21729828",
-        "supplied_md5": "19a59a83d90f352afc0c54b0ade4bc06",
-        "computed_md5": "19a59a83d90f352afc0c54b0ade4bc06",
-        "mimetype": "application/vnd.ms-excel"
-        },
-        {
-        "id": 21729828,
-        "name": "Hall-et-al.xls",
-        "size": 400896,
-        "is_link_only": False,
-        "download_url": "https://ndownloader.figshare.com/files/21729829",
-        "supplied_md5": "19a59a83d90f352afc0c54b0ade4bc060",
-        "computed_md5": "19a59a83d90f352afc0c54b0ade4bc060",
-        "mimetype": "application/vnd.ms-excel"
+          "id": 44937931,
+          "name": "BayofPanama_Site1.zip",
+          "size": 19891019,
+          "is_link_only": False,
+          "download_url": "https://ndownloader.figshare.com/files/44937931",
+          "supplied_md5": "36fbce3d5c4ddd63c91a69801b6d15d2",
+          "computed_md5": "36fbce3d5c4ddd63c91a69801b6d15d2",
+          "mimetype": "application/zip"
         }
-    ],
-    "custom_fields": [],
-    "authors": [
+      ],
+      "custom_fields": [],
+      "authors": [
         {
-        "id": 8451984,
-        "full_name": "Jefferson Hall",
-        "is_active": True,
-        "url_name": "Jefferson_Hall",
-        "orcid_id": "0000-0003-4761-9268"
-        },
-        {
-        "id": 4912528,
-        "full_name": "Mario Baillon",
-        "is_active": False,
-        "url_name": "_",
-        "orcid_id": ""
-        },
-        {
-        "id": 8452001,
-        "full_name": "Johana Balbuena",
-        "is_active": False,
-        "url_name": "_",
-        "orcid_id": "0000-0002-1857-1560"
-        },
-        {
-        "id": 8452007,
-        "full_name": "Miguel Nuñez",
-        "is_active": False,
-        "url_name": "_",
-        "orcid_id": "0000-0002-4408-9954"
-        },
-        {
-        "id": 8452018,
-        "full_name": "Arturo Cerezo",
-        "is_active": False,
-        "url_name": "_",
-        "orcid_id": "0000-0003-3609-4013"
-        },
-        {
-        "id": 4912456,
-        "full_name": "Michiel van  Breugel",
-        "is_active": True,
-        "url_name": "Michiel_van_Breugel",
-        "orcid_id": ""
-        },
-        {
-        "id": 8452020,
-        "full_name": "Laura E. Boeschoten",
-        "is_active": False,
-        "url_name": "_",
-        "orcid_id": "0000-0002-6061-2194"
+          "id": 7540937,
+          "full_name": "Steven Paton",
+          "is_active": True,
+          "url_name": "Steven_Paton",
+          "orcid_id": "0000-0003-2035-6699"
         }
-    ],
-    "figshare_url": "https://smithsonian.figshare.com/articles/dataset/Hall_et_al_data_used_in_data_from_Boeschoten_et_al_Framework_species_approach_2_of_2/11856180",
-    "download_disabled": False,
-    "description": "Mature forest data set used in Journal of Sustainable Forestry manuscript by Boeschoten et al. Reforestation data set uploaded separately.",
-    "funding": None,
-    "funding_list": [],
-    "version": 1,
-    "status": "public",
-    "size": 400896,
-    "created_date": "2020-04-29T19:43:27Z",
-    "modified_date": "2020-04-29T19:43:45Z",
-    "is_public": True,
-    "is_confidential": False,
-    "is_metadata_record": False,
-    "confidential_reason": "",
-    "metadata_reason": "",
-    "license": {
+      ],
+      "figshare_url": "https://smithsonian.figshare.com/articles/dataset/Bay_of_Panama_Water_Quality_Monitoring_Project_Site_1_of_7/10042703",
+      "download_disabled": False,
+      "description": "<div>Bay of Panama water quality monitoring program. Site #1 (of 7). <br></div><div>Location: 8° 38.743'N, 79° 2.887'W<br></div>Weekly depth profile (approximately 5m intervals) using YSI EXO 2 sonde. <br>Parameters measured temperature, salinity, conductivity, pH, turbidity, chlorophyll, Dissolved Oxygen<p></p>",
+      "funding": None,
+      "funding_list": [],
+      "version": 5,
+      "status": "public",
+      "size": 19891019,
+      "created_date": "2024-03-08T14:44:22Z",
+      "modified_date": "2024-03-08T14:44:22Z",
+      "is_public": True,
+      "is_confidential": False,
+      "is_metadata_record": False,
+      "confidential_reason": "",
+      "metadata_reason": "",
+      "license": {
         "value": 1,
         "name": "CC BY 4.0",
         "url": "https://creativecommons.org/licenses/by/4.0/"
-    },
-    "tags": [
-        "Panama Canal Watershed",
-        "Forest Restoration",
-        "Tropical Forest",
-        "Plant Biology"
-    ],
-    "categories": [
+      },
+      "tags": [
+        "temperature",
+        "salinity",
+        "turbidity measurement",
+        "chlorophyll",
+        "conductivity",
+        "Acidity",
+        "Dissolved Oxygen",
+        "Dissolved organic matter (DOM)",
+        "Environmental Monitoring",
+        "Physical Oceanography"
+      ],
+      "categories": [
         {
-        "id": 24394,
-        "title": "Plant biology not elsewhere classified",
-        "parent_id": 24373,
-        "path": "/24130/24373/24394",
-        "source_id": "310899",
-        "taxonomy_id": 100
+          "id": 26935,
+          "title": "Environmental assessment and monitoring",
+          "parent_id": 26929,
+          "path": "/26863/26929/26935",
+          "source_id": "410402",
+          "taxonomy_id": 100
+        },
+        {
+          "id": 25906,
+          "title": "Physical oceanography",
+          "parent_id": 25897,
+          "path": "/25717/25897/25906",
+          "source_id": "370803",
+          "taxonomy_id": 100
         }
-    ],
-    "references": [],
-    "has_linked_file": False,
-    "citation": "Hall, Jefferson; Baillon, Mario; Balbuena, Johana; Nuñez, Miguel; Cerezo, Arturo; van  Breugel, Michiel; et al. (2020). Hall et al data used in data from Boeschoten et al_Framework species approach_2 of 2. Smithsonian Tropical Research Institute. Dataset. https://doi.org/10.25573/data.11856180.v1",
-    "related_materials": [],
-    "is_embargoed": False,
-    "embargo_date": None,
-    "embargo_type": "file",
-    "embargo_title": "",
-    "embargo_reason": "",
-    "embargo_options": [],
-    "id": 11856180,
-    "title": "Hall et al data used in data from Boeschoten et al_Framework species approach_2 of 2",
-    "doi": "10.25573/data.11856180.v1",
-    "handle": "",
-    "url": "https://api.figshare.com/v2/articles/11856180",
-    "published_date": "2020-04-29T19:43:27Z",
-    "thumb": "",
-    "defined_type": 3,
-    "defined_type_name": "dataset",
-    "group_id": 23486,
-    "url_private_api": "https://api.figshare.com/v2/account/articles/11856180",
-    "url_public_api": "https://api.figshare.com/v2/articles/11856180",
-    "url_private_html": "https://figshare.com/account/articles/11856180",
-    "url_public_html": "https://smithsonian.figshare.com/articles/dataset/Hall_et_al_data_used_in_data_from_Boeschoten_et_al_Framework_species_approach_2_of_2/11856180",
-    "timeline": {
-        "posted": "2020-04-29T19:43:27",
-        "firstOnline": "2020-04-29T19:43:27"
-    },
-    "resource_title": None,
-    "resource_doi": None
+      ],
+      "references": [
+        "https://biogeodb.stri.si.edu/physical_monitoring/research/waterquality"
+      ],
+      "has_linked_file": False,
+      "citation": "Paton, Steve (2019). Bay of Panama Water Quality Monitoring Project, Site 1 of 7. Smithsonian Tropical Research Institute. Dataset. https://doi.org/10.25573/data.10042703.v5",
+      "related_materials": [
+        {
+          "id": 113195580,
+          "identifier": "https://biogeodb.stri.si.edu/physical_monitoring/research/waterquality",
+          "title": "",
+          "relation": "References",
+          "identifier_type": "URL",
+          "is_linkout": False,
+          "link": "https://biogeodb.stri.si.edu/physical_monitoring/research/waterquality"
+        }
+      ],
+      "is_embargoed": False,
+      "embargo_date": None,
+      "embargo_type": "file",
+      "embargo_title": "",
+      "embargo_reason": "",
+      "embargo_options": [],
+      "id": 10042703,
+      "title": "Bay of Panama Water Quality Monitoring Project, Site 1 of 7",
+      "doi": "10.25573/data.10042703.v5",
+      "handle": "",
+      "url": "https://api.figshare.com/v2/articles/10042703",
+      "published_date": "2024-03-08T14:44:22Z",
+      "thumb": "",
+      "defined_type": 3,
+      "defined_type_name": "dataset",
+      "group_id": 23486,
+      "url_private_api": "https://api.figshare.com/v2/account/articles/10042703",
+      "url_public_api": "https://api.figshare.com/v2/articles/10042703",
+      "url_private_html": "https://figshare.com/account/articles/10042703",
+      "url_public_html": "https://smithsonian.figshare.com/articles/dataset/Bay_of_Panama_Water_Quality_Monitoring_Project_Site_1_of_7/10042703",
+      "timeline": {
+        "posted": "2024-03-08T14:44:22",
+        "firstOnline": "2019-10-28T12:51:31"
+      },
+      "resource_title": None,
+      "resource_doi": None
     }
