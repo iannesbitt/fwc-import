@@ -6,6 +6,9 @@ from .utils import parse_name, get_lat_lon, get_filelist
 
 
 def figshare_to_eml(figshare: dict):
+    """
+    Construct a minimal EML document from a figshare article.
+    """
     
     eml = Element('eml:eml', attrib={
         'xmlns:eml': 'eml://ecoinformatics.org/eml-2.1.1',
