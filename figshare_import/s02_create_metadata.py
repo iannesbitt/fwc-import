@@ -22,8 +22,7 @@ DATA_ROOT = Path('')
 
 from .defs import fmts
 from .uploads import load_uploads, save_uploads
-from .parse_names import parse_name
-from .figshare_eml import load_xwalk, create_eml
+from .utils import parse_name
 # try:
 #     from .defs import fmts
 # except:
