@@ -3,7 +3,7 @@ import d1_client.mnclient as mn
 from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
 
 from .utils import parse_name, get_lat_lon, get_filelist
-
+from .defs import GROUP_ID
 
 def figshare_to_eml(figshare: dict):
     """
@@ -32,6 +32,9 @@ def figshare_to_eml(figshare: dict):
         surName = SubElement(individualName, 'surName')
         surName.text = family
     
+    organization = SubElement(dataset, 'organizationName')
+    organization.text = GROUP_ID[figshare.get('group_id', 23417)]
+
     pubDate = SubElement(dataset, 'pubDate')
     pubDate.text = figshare['published_date']
     
