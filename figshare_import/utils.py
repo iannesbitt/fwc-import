@@ -1,7 +1,7 @@
 import re
 from pygeodesy.namedTuples import LatLon3Tuple
 from logging import getLogger
-
+from d1_client.mnclient_2_0 import MemberNodeClient_2_0
 
 def parse_name(fullname: str):
     """
@@ -75,18 +75,43 @@ def get_lat_lon(desc: str):
     return latlon
 
 
-def get_filelist(doi:str):
+def get_d1_ids(filedict: dict, client: MemberNodeClient_2_0):
     """
+    Retrieve DataONE object identifiers for hashed files in a file dictionary.
+
+    :param dict filedict: A dictionary containing file information.
+    :param MemberNodeClient_2_0 client: A DataONE MemberNodeClient_2_0 object.
+    :return: A dictionary with updated file information including identifiers, formatIds, and URLs.
+    :rtype: dict
     """
-    dist_list = [] # distribution list
-    # load list of datasets
-    flist = []
-    # iterat
-    for f in flist:
- 
-        dist_list.append({
-            'type': 'DataDownload',
-            'encodingFormat': f['mimetype'],
-            'name': f['filename'],
-            'contentUrl': f['/object/'] 
-        })
+    L = getLogger(__name__)
+    try:
+        object_list = client.listObjects(start=0, count=1)
+        tot = object_list.total
+        L.info(f'Total number of objects in MN {client.base_url}: {tot}')
+        object_list_list = []
+        object_list_list.append(client.listObjects(start=0, count=tot))
+        if not (object_list_list[0].total == tot):
+            L.info(f'Got {object_list_list[0].total} of {tot} objects, requesting the rest...')
+            object_list_list.append([client.listObjects(start=i, count=tot) for i in range(object_list_list[0].count, tot, object_list_list[0].count)])
+            L.info('Done.')
+    except Exception as e:
+        L.error(f"Failed to retrieve object list from DataONE: {e}")
+        return filedict
+    # Create a dictionary to map MD5 sums to identifiers, formatIds, and URLs
+    obj_info = {}
+    for object_list in object_list_list:
+        for obj in object_list.objectInfo:
+            obj_info[obj.checksum.value()] = {
+                'identifier': obj.identifier.value(),
+                'formatId': obj.formatId,
+                'url': f"{client.base_url}/v2/object/{obj.identifier.value()}"
+            }
+    # Update the file info dictionary
+    for doi, files in filedict.items():
+        for md5, file_info in files.items():
+            if md5 in obj_info:
+                file_info['identifier'] = obj_info[md5]['identifier']
+                file_info['formatId'] = obj_info[md5]['formatId']
+                file_info['url'] = obj_info[md5]['url']
+    return filedict
