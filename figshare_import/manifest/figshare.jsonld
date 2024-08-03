@@ -6,6 +6,7 @@
         "codemeta": "https://codemeta.github.io/terms/",
         "DOI":"http://doi.org/",
         "created_date": {"@id": "schema:dateCreated"},
+        "authors": {"@id": "schema:creator", "@container": "@list"},
         "modified_date":  {"@id": "schema:dateModified"},
         "published_date":  {"@id": "schema:datePublished"},
         "tags": { "@id": "schema:keywords", "@container": "@list" },
