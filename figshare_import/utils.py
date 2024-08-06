@@ -166,6 +166,7 @@ def get_d1_ids(filedict: dict, client: MemberNodeClient_2_0):
     :rtype: dict
     """
     L = getLogger(__name__)
+    sep = '' if client.base_url.endswith('/') else '/'
     try:
         object_list = client.listObjects(start=0, count=1)
         tot = object_list.total
@@ -186,7 +187,7 @@ def get_d1_ids(filedict: dict, client: MemberNodeClient_2_0):
             obj_info[obj.checksum.value()] = {
                 'identifier': obj.identifier.value(),
                 'formatId': obj.formatId,
-                'url': f"{client.base_url}/v2/object/{obj.identifier.value()}"
+                'url': f"{client.base_url}{sep}v2/object/{obj.identifier.value()}"
             }
     # Update the file info dictionary
     for doi, files in filedict.items():
