@@ -10,6 +10,7 @@ from datetime import datetime
 
 from .conv import figshare_to_eml
 from .defs import GROUP_ID
+from .run_data_upload import get_doipath
 
 
 def parse_name(fullname: str):
@@ -84,23 +85,34 @@ def get_lat_lon(desc: str):
     return latlon
 
 
-def write_article(article: dict, fmt: str, number: int):
+def pathify(title: str):
     """
-    Writes the article dictionary to a file in the specified format.
+    Convert a title to a file path.
+
+    :param title: The title to convert.
+    :type title: str
+    :return: The pathified title.
+    :rtype: str
+    """
+    return re.sub(r'[^\w\s]', '', title).replace(' ', '_')[:48]
+
+
+def write_article(article: dict, doi: str, title: str, fmt: str):
+    """
+    Writes the article dictionary to a file.
 
     :param article: The article data to write.
     :type article: dict
-    :param fmt: The format to write the article in (e.g., 'json', 'xml').
-    :type fmt: str
-    :param number: The number to use in the filename.
-    :type number: int
+    :param path: The format to write the article in (e.g., 'json', 'xml').
+    :type path: Path
     """
-    d = datetime.now().strftime('%Y-%m-%d')
-    p = Path(f'~/figshare-jsonld/{d}').expanduser()
-    if not p.exists():
-        p.mkdir()
-    with open(str(Path(p / f'{number}.{fmt}')), 'w') as f:
-        json.dump(article, fp=f, indent=2)
+    doipath = get_doipath(doi)
+    path = Path(doipath / pathify(title) + f".{fmt}")
+    with open(str(Path(path)), 'w') as f:
+        if fmt == 'json':
+            json.dump(article, fp=f, indent=2)
+        elif fmt == 'xml':
+            f.write(article)
 
 
 def get_article_list(articles):

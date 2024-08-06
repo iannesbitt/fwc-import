@@ -21,7 +21,7 @@ global DATA_ROOT
 DATA_ROOT = Path('')
 
 from .defs import fmts
-from .utils import get_article_list, load_uploads, save_uploads
+from .utils import get_article_list, load_uploads, save_uploads, write_article
 
 rpt_txt = """
 Package creation report:
@@ -261,7 +261,9 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
             i += 1
             L.debug(f'Article:\n{article}')
             doi = article.get('doi')
+            title = article.get('title')
             L.info(f'({i}/{n}) Working on {doi}')
+            write_article(article=article, doi=doi, title=title, fmt='json')
             files = article.get('files')
             if not (uploads.get(doi)):
                 uploads[doi] = {}
