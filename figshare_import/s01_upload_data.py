@@ -214,7 +214,7 @@ def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0
         i += 1
         try:
             fformat = get_format(f)
-            data_pid = str(uuid.uuid4())
+            data_pid = f"urn:uuid:{str(uuid.uuid4())}"
             L.debug(f'{doi} Reading {f.name}')
             data_bytes = f.read_bytes()
             L.debug(f'{doi} Generating sysmeta for {f.name}')
