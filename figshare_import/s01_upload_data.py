@@ -21,14 +21,8 @@ global DATA_ROOT
 DATA_ROOT = Path('')
 
 from .defs import fmts
-from .uploads import load_uploads, save_uploads
-from .utils import parse_name
-# try:
-#     from .defs import fmts
-# except:
-#     fmts = {'.xls': 'application/vnd.ms-excel','.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','.doc': 'application/msword','.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document','.ppt': 'application/vnd.ms-powerpoint','.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation','.pdf': 'application/pdf','.txt': 'text/plain','.zip': 'application/zip','.ttl': 'text/turtle','.md': 'text/markdown','.rmd': 'text/x-rmarkdown','.csv': 'text/csv','.bmp': 'image/bmp','.gif': 'image/gif','.jpg': 'image/jpeg','.jpeg': 'image/jpeg','.jp2': 'image/jp2','.png': 'image/png','.tif': 'image/geotiff','.svg': 'image/svg+xml','.nc': 'netCDF-4','.py': 'application/x-python','.hdf': 'application/x-hdf','.hdf5': 'application/x-hdf5','.tab': 'text/plain','.gz': 'application/x-gzip','.html': 'text/html','.htm': 'text/html','.xml': 'text/xml','.ps': 'application/postscript','.tsv': 'text/tsv','.rtf': 'application/rtf','.mp4': 'video/mp4','.r': 'application/R','.rar': 'application/x-rar-compressed','.fasta': 'application/x-fasta','.fastq': 'application/x-fasta','.fas': 'application/x-fasta','.gpx': 'application/gpx+xml'}
+from .utils import get_article_list, load_uploads, save_uploads
 
-split_str = '<qdc:qualifieddc '
 rpt_txt = """
 Package creation report:
 Failed uploads:     %s
@@ -40,6 +34,7 @@ Failed packages:
 Successful packages:
 %s
 """
+
 
 def get_token():
     """
@@ -66,6 +61,7 @@ def get_config():
 def generate_sys_meta(pid: str, sid: str, format_id: str, size: int, md5, now, orcid: str):
     """
     Fills out the system metadata object with the needed properties
+
     :param pid: The pid of the system metadata document
     :param format_id: The format of the document being described
     :param size: The size of the document that is being described
@@ -92,6 +88,7 @@ def generate_sys_meta(pid: str, sid: str, format_id: str, size: int, md5, now, o
 def generate_system_metadata(pid: str, sid: str, format_id: str, science_object: bytes, orcid: str):
     """
     Generates a system metadata document.
+
     :param pid: The pid that the object will have
     :param format_id: The format of the object (e.g text/csv)
     :param science_object: The object that is being described
@@ -301,13 +298,6 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
         report(succ=i-er, fail=er, finished_dois=succ_list, failed_dois=err_list)
 
 
-def get_articles(metadata_json):
-    """
-    """
-    with open(metadata_json, 'r') as f:
-        return json.load(fp=f)['articles']
-
-
 def main():
     """
     Set config items then start upload loop.
@@ -326,7 +316,7 @@ def main():
         }
     # Create the Member Node Client
     client: MemberNodeClient_2_0 = MemberNodeClient_2_0(mn_url, **options)
-    articles = get_articles(metadata_json)
+    articles = get_article_list(metadata_json)
     L.info(f'Found {len(articles)} metadata records')
     upload_manager(articles=articles, orcid=orcid, client=client, node=node)
     client._session.close()
