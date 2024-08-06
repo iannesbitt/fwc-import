@@ -2,12 +2,18 @@ import logging
 import d1_client.mnclient as mn
 from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
 
-from .utils import parse_name, get_lat_lon, get_filelist
+from .utils import parse_name, get_lat_lon
 from .defs import GROUP_ID
+
 
 def figshare_to_eml(figshare: dict):
     """
     Construct a minimal EML document from a figshare article.
+
+    :param figshare: The figshare article data.
+    :type figshare: dict
+    :return: The EML-formatted string.
+    :rtype: str
     """
     
     eml = Element('eml:eml', attrib={
