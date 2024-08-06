@@ -1,7 +1,16 @@
+import json
 import re
 from pygeodesy.namedTuples import LatLon3Tuple
 from logging import getLogger
 from d1_client.mnclient_2_0 import MemberNodeClient_2_0
+
+from pathlib import Path
+from logging import getLogger
+from datetime import datetime
+
+from .conv import figshare_to_eml
+from .defs import GROUP_ID
+
 
 def parse_name(fullname: str):
     """
@@ -75,6 +84,78 @@ def get_lat_lon(desc: str):
     return latlon
 
 
+def write_article(article: dict, fmt: str, number: int):
+    """
+    Writes the article dictionary to a file in the specified format.
+
+    :param article: The article data to write.
+    :type article: dict
+    :param fmt: The format to write the article in (e.g., 'json', 'xml').
+    :type fmt: str
+    :param number: The number to use in the filename.
+    :type number: int
+    """
+    d = datetime.now().strftime('%Y-%m-%d')
+    p = Path(f'~/figshare-jsonld/{d}').expanduser()
+    if not p.exists():
+        p.mkdir()
+    with open(str(Path(p / f'{number}.{fmt}')), 'w') as f:
+        json.dump(article, fp=f, indent=2)
+
+
+def get_article_list(articles):
+    """
+    Retrieves the list of articles from the provided data.
+
+    :param articles: The data containing articles.
+    :type articles: dict or list
+    :return: The list of articles.
+    :rtype: list
+    """
+    L = getLogger(__name__)
+    alist = None
+    try:
+        alist = articles.get('articles')
+    except:
+        L.info('articles object is not a dict. List, perhaps?')
+    if alist:
+        articles = alist
+    else:
+        if (type(articles) == list) and (len(articles) >= 1):
+            L.info(f'articles object is a list of length {len(articles)}')
+    L.info(f'Found {len(articles)} article records')
+    return articles
+
+
+def process_articles(articles: dict):
+    """
+    This function performs three actions:
+
+    1. Writes the original Figshare metadata to files in JSON format.
+    2. Converts the Figshare metadata to EML-formatted strings.
+    3. Writes the EML to XML.
+    Archives Figshare articles by writing them to files in different formats.
+
+    :param articles: The data containing articles.
+    :type articles: dict
+    :return: A list of processed articles in EML format.
+    :rtype: dict
+    """
+    L = getLogger(__name__)
+    articles = get_article_list(articles)
+    eml_list = []
+    i = 0
+    for article in articles:
+        L.debug(f'Starting record {i}')
+        write_article(article, fmt='json', number=i)
+        eml = figshare_to_eml(article)
+        write_article(eml, fmt='xml', number=i)
+        eml_list.append(eml)
+        i += 1
+
+    return eml_list
+
+
 def get_d1_ids(filedict: dict, client: MemberNodeClient_2_0):
     """
     Retrieve DataONE object identifiers for hashed files in a file dictionary.
@@ -115,3 +196,39 @@ def get_d1_ids(filedict: dict, client: MemberNodeClient_2_0):
                 file_info['formatId'] = obj_info[md5]['formatId']
                 file_info['url'] = obj_info[md5]['url']
     return filedict
+
+
+def save_uploads(uploads: dict, fp: Path='./uploads.json'):
+    """
+    """
+    L = getLogger(__name__)
+    l = len(uploads)
+    if fp.parent.exists():
+        with open(fp, 'w') as f:
+            json.dump(uploads, fp=f, indent=2)
+        L.info(f'Wrote {l} uploads to {fp}')
+        L.debug(f'Saved upload dump:\n{json.dumps(uploads,indent=2)}')
+        return fp
+    else:
+        L.error(f'Could not find folder to write uploads file! Dumping them here:\n{json.dumps(uploads, indent=2)}')
+
+
+def load_uploads(fp: Path='./uploads.json'):
+    """
+    """
+    L = getLogger(__name__)
+    if fp.exists():
+        L.info(f'Loading uploads from {fp}')
+        with open(fp, 'r') as f:
+            try:
+                uploads = json.load(fp=f)
+            except json.JSONDecodeError as e:
+                L.warning(f'Caught JSONDecodeError: {e}. This probably happened because there is no file to read. Continuing with empty dict...')
+                uploads = {}
+        l = len(uploads)
+        L.info(f'Loaded info for {l} uploads.')
+        L.debug(f'Loaded upload dump:\n{json.dumps(uploads,indent=2)}')
+        return uploads
+    else:
+        L.error('Could not find uploads file!')
+        raise FileNotFoundError('Could not find an uploads info json file!')
