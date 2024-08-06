@@ -188,6 +188,24 @@ def get_filepaths(files: list, doidir: Path):
     return paths
 
 
+def get_doipath(doi: str):
+    """
+    Get the path to the data directory for a given DOI.
+
+    :param doi: The DOI to search for.
+    :type doi: str
+    :return: The path to the data directory.
+    :rtype: Path
+    """
+    L = getLogger(__name__)
+    global DATA_ROOT
+    doidir = Path(DATA_ROOT / doi)
+    if not doidir.exists():
+        L.info(f'{doidir} does not exist. Trying other versions...')
+        doidir = search_versions(doi)
+    return doidir
+
+
 def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0):
     """
     """
@@ -196,10 +214,7 @@ def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0
     sm_dict = {}
     # Create and upload the EML
     # Get and upload the data
-    doidir = Path(DATA_ROOT / doi)
-    if not doidir.exists():
-        L.info(f'{doidir} does not exist. Trying other versions...')
-        doidir = search_versions(doi)
+    doidir = get_doipath(doi)
     files = get_filepaths(doidir=doidir, files=files)
     flen = len(files)
     if flen == 0:
