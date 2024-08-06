@@ -208,6 +208,15 @@ def get_doipath(doi: str):
 
 def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0):
     """
+    Upload the files to the Member Node.
+
+    :param str orcid: The ORCID of the uploader.
+    :param str doi: The DOI of the article.
+    :param list files: The list of files to upload.
+    :param client: The Member Node client.
+    :type client: MemberNodeClient_2_0
+    :return: A dictionary of checksums and file information.
+    :rtype: dict
     """
     L = getLogger(__name__)
     data_pids = None
@@ -249,6 +258,11 @@ def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0
 def report(succ: int, fail: int, finished_dois: list, failed_dois: list):
     """
     Generate a short report with the successes and failures of the process.
+
+    :param int succ: The number of successful uploads.
+    :param int fail: The number of failed uploads.
+    :param list finished_dois: The DOIs that were successfully uploaded.
+    :param list failed_dois: The DOIs that failed to upload.
     """
     L = getLogger(__name__)
     finished_str = "\n".join(str(x) for x in finished_dois)
