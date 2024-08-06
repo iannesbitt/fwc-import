@@ -38,7 +38,11 @@ Successful packages:
 
 def get_token():
     """
-    Paste your auth token into '~/.d1_token'
+    Get the DataONE token from the token file.
+    Paste your auth token into './.d1_token'.
+
+    :return: The DataONE token.
+    :rtype: str
     """
     # Set the D1 token
     with open(Path(CONFIG_LOC / '.d1_token'), 'r') as tf:
@@ -48,6 +52,9 @@ def get_token():
 def get_config():
     """
     Config values that are not the d1 token go in 'config.json'.
+
+    :return: The ORCID, node identifier, Member Node URL, and metadata JSON file.
+    :rtype: tuple
     """
     global DATA_ROOT
     # Set your ORCID
@@ -68,6 +75,8 @@ def generate_sys_meta(pid: str, sid: str, format_id: str, size: int, md5, now, o
     :param md5: The md5 hash of the document being described
     :param now: The current time
     :param orcid: The uploader's orcid
+    :return: The system metadata document
+    :rtype: dataoneTypes.systemMetadata
     """
     # create sysmeta and fill out relevant fields
     sys_meta = dataoneTypes.systemMetadata()
@@ -92,7 +101,8 @@ def generate_system_metadata(pid: str, sid: str, format_id: str, science_object:
     :param pid: The pid that the object will have
     :param format_id: The format of the object (e.g text/csv)
     :param science_object: The object that is being described
-    :return:
+    :return: The system metadata document, MD5 sum, and size of the object
+    :rtype: tuple
     """
     L = getLogger(__name__)
     # Check that the science_object is unicode, attempt to convert it if it's a str
@@ -114,6 +124,9 @@ def generate_system_metadata(pid: str, sid: str, format_id: str, science_object:
 def generate_public_access_policy():
     """
     Creates the access policy for the object. Note that the permission is set to 'read'.
+    
+    :return: The access policy.
+    :rtype: dataoneTypes.accessPolicy
     """
     accessPolicy = dataoneTypes.accessPolicy()
     accessRule = dataoneTypes.AccessRule()
@@ -128,6 +141,10 @@ def get_format(fmt: Path):
     """
     Test the format based on the file suffix. If none is found, fall back to
     application/octet-stream.
+
+    :param Path fmt: The file to test.
+    :return: The format id.
+    :rtype: str
     """
     L = getLogger(__name__)
     if fmt.suffix:
@@ -144,6 +161,10 @@ def search_versions(doi: str):
     Search the directory structure for a given DOI. If no dir is found, then
     decrease the version at the end of the DOI until a directory is found that
     matches. Return a list of files.
+
+    :param str doi: The DOI to search for.
+    :return: The path to the data directory.
+    :rtype: Path
     """
     global DATA_ROOT
     L = getLogger(__name__)
@@ -176,6 +197,12 @@ def search_versions(doi: str):
 
 def get_filepaths(files: list, doidir: Path):
     """
+    Get the paths to the files in the data directory.
+
+    :param list files: The list of files to search for.
+    :param Path doidir: The path to the data directory.
+    :return: The list of paths to the files.
+    :rtype: list
     """
     paths = []
     for f in files:
@@ -272,7 +299,14 @@ def report(succ: int, fail: int, finished_dois: list, failed_dois: list):
 
 def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, node: str):
     """
-    Package creation and upload loop.
+    Package creation and upload loop. This function will create packages and
+    upload them to the Member Node.
+
+    :param list articles: The list of articles to upload.
+    :param str orcid: The ORCID of the uploader.
+    :param client: The Member Node client.
+    :type client: MemberNodeClient_2_0
+    :param str node: The node identifier.
     """
     L = getLogger(__name__)
     n = len(articles)
@@ -331,7 +365,8 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
 
 def main():
     """
-    Set config items then start upload loop.
+    Set config items then start upload loop. This function is called when the
+    script is run directly.
     """
     L = getLogger(__name__)
     # Set config items
@@ -355,6 +390,6 @@ def main():
 
 if __name__ == "__main__":
     """
-    Running directly
+    Running directly.
     """
     main()
