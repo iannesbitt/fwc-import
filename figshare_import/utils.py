@@ -159,9 +159,9 @@ def process_articles(articles: dict):
     i = 0
     for article in articles:
         L.debug(f'Starting record {i}')
-        write_article(article, fmt='json', number=i)
+        write_article(article, fmt='json', doi=article.get('doi'), title=article.get('title'))
         eml = figshare_to_eml(article)
-        write_article(eml, fmt='xml', number=i)
+        write_article(eml, fmt='xml', doi=article.get('doi'), title=article.get('title'))
         eml_list.append(eml)
         i += 1
 
