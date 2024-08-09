@@ -7,6 +7,7 @@ import json
 from d1_client.mnclient_2_0 import *
 from d1_common.types import dataoneTypes
 from d1_common.resource_map import createSimpleResourceMap
+from d1_common.resource_map import ResourceMap
 
 from logging import getLogger
 
@@ -195,7 +196,7 @@ def get_doipath(doi: str):
     return doidir
 
 
-def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0):
+def upload_files(orcid: str, doi: str, files: list[Path], client: MemberNodeClient_2_0):
     """
     Upload the files to the Member Node.
 
@@ -208,6 +209,8 @@ def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0
     :rtype: dict
     """
     L = getLogger(__name__)
+    global CN_URL
+    sep = '' if CN_URL.endswith('/') else '/'
     data_pids = None
     sm_dict = {}
     # Create and upload the EML
@@ -235,13 +238,130 @@ def upload_files(orcid: str, doi: str, files: list, client: MemberNodeClient_2_0
                                                         orcid=orcid)
             L.info(f'{doi} ({i}/{flen}) Uploading {f.name} ({round(size/(1024*1024), 1)} MB)')
             dmd = client.create(data_pid, data_bytes, data_sm)
-            L.debug(f'{doi} Received response for science object upload:\n{dmd}')
-            data_pids.append(data_pid)
-            sm_dict[md5] = {'filename': f.name, 'size': size, 'doi': doi}
+            if isinstance(dmd, dataoneTypes.Identifier):
+                try:
+                    L.info(f'{doi} Received response for science object upload: {dmd.value()}\n{dmd}')
+                except Exception as e:
+                    L.error(f'{doi} Received <d1_common.types.generated.dataoneTypes_v1.Identifier> but could not print value: {repr(e)}')
+                data_pids.append(data_pid)
+                sm_dict[md5] = {
+                    'filename': f.name,
+                    'size': size,
+                    'doi': doi,
+                    'identifier': data_pid,
+                    'formatId': fformat,
+                    'url': f"{CN_URL}{sep}v2/resolve/{data_pid}",
+                }
+            else:
+                L.error(f'{doi} Unexpected response type: {type(dmd)}')
+                try:
+                    L.debug(f'{doi} Received response:\n{dmd.value()}')
+                except Exception as e:
+                    L.error(f'{doi} Could not print response: {repr(e)}')
         except Exception as e:
             L.error(f'{doi} upload failed ({e})')
             raise BaseException(e)
     return sm_dict
+
+
+def upload_eml(orcid: str, doi: str, eml: str, client: MemberNodeClient_2_0):
+    """
+    Upload the EML to the Member Node.
+    
+    :param str orcid: The ORCID of the uploader.
+    :param str doi: The DOI of the article.
+    :param str eml: The EML to upload.
+    :param client: The Member Node client.
+    :type client: MemberNodeClient_2_0
+    :return: The identifier of the EML.
+    :rtype: str
+    """
+    L = getLogger(__name__)
+    eml_pid = f"urn:uuid:{str(uuid.uuid4())}"
+    eml_bytes = eml.encode("utf-8")
+    eml_sm, eml_md5, eml_size = generate_system_metadata(pid=eml_pid,
+                                                         sid=doi,
+                                                         format_id="https://eml.ecoinformatics.org/eml-2.2.0",
+                                                         science_object=eml_bytes,
+                                                         orcid=orcid)
+    eml_dmd = client.create(eml_pid, eml_bytes, eml_sm)
+    if isinstance(eml_dmd, dataoneTypes.Identifier):
+        try:
+            L.info(f'{doi} Received response for EML upload: {eml_dmd.value()}\n{eml_dmd}')
+            if eml_dmd.value() == eml_pid:
+                L.info(f'{doi} EML uploaded successfully: {eml_pid}')
+            else:
+                L.error(f'{doi} EML identifier does not match D1 identifier! {eml_pid} != {eml_dmd.value()}')
+        except Exception as e:
+            L.error(f'{doi} Received <d1_common.types.generated.dataoneTypes_v1.Identifier> but could not print value: {repr(e)}')
+        return eml_pid, eml_md5, eml_size
+    else:
+        L.error(f'{doi} Unexpected response type: {type(eml_dmd)}')
+        try:
+            L.debug(f'{doi} Received response:\n{eml_dmd.value()}')
+        except Exception as e:
+            L.error(f'{doi} Could not print response: {repr(e)}')
+        return None
+
+
+def generate_resource_map(doi: str, eml_pid: str, data_pids: list):
+    """
+    Generate the resource map XML for the given DOI, EML PID, and data PIDs.
+
+    :param str doi: The DOI of the article.
+    :param str eml_pid: The PID of the EML.
+    :param list data_pids: The list of data PIDs.
+    :return: The resource map XML.
+    :rtype: str
+    """
+    L = getLogger(__name__)
+    resource_map: ResourceMap = createSimpleResourceMap(
+        ore_pid=f"urn:uuid:{str(uuid.uuid4())}",
+        scimeta_pid=eml_pid,
+        scidata_pid_list=data_pids,
+    )
+    L.debug(f"Generated resource map:\n{resource_map}")
+    return resource_map
+
+
+def upload_resource_map(doi: str, resource_map: ResourceMap, client: MemberNodeClient_2_0, orcid: str):
+    """
+    Upload the resource map to the Member Node.
+
+    :param str doi: The DOI of the article.
+    :param resource_map: The resource map XML.
+    :type resource_map: ResourceMap
+    :param client: The Member Node client.
+    :type client: MemberNodeClient_2_0
+    :return: The identifier of the resource map.
+    :rtype: str
+    """
+    L = getLogger(__name__)
+    resource_map_pid = resource_map.getResourceMapPid()
+    resource_map_bytes = resource_map.serialize(format="xml")
+    resource_map_sm, resource_map_md5, resource_map_size = generate_system_metadata(pid=resource_map_pid,
+                                                                                    sid=doi,
+                                                                                    format_id="http://www.openarchives.org/ore/terms/ResourceMap",
+                                                                                    science_object=resource_map_bytes,
+                                                                                    orcid=orcid)
+    resource_map_dmd = client.create(resource_map_pid, resource_map_bytes, resource_map_sm)
+    if isinstance(resource_map_dmd, dataoneTypes.Identifier):
+        try:
+            L.info(f'{doi} Received response for resource map upload: {resource_map_dmd.value()}\n{resource_map_dmd}')
+            if resource_map_dmd.value() == resource_map_pid:
+                L.info(f'{doi} Resource map uploaded successfully: {resource_map_pid}')
+            else:
+                L.error(f'{doi} Resource map identifier does not match D1 identifier! {resource_map_pid} != {resource_map_dmd.value()}')
+        except Exception as e:
+            L.error(f'{doi} Received <d1_common.types.generated.dataoneTypes_v1.Identifier> but could not print value: {repr(e)}')
+        return resource_map_pid, resource_map_md5, resource_map_size
+    else:
+        L.error(f'{doi} Unexpected response type: {type(resource_map_dmd)}')
+        try:
+            L.debug(f'{doi} Received response:\n{resource_map_dmd.value()}')
+        except Exception as e:
+            L.error(f'{doi} Could not print response: {repr(e)}')
+        return None
 
 
 def report(succ: int, fail: int, finished_dois: list, failed_dois: list):
@@ -271,6 +391,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
     :param str node: The node identifier.
     """
     L = getLogger(__name__)
+    sep = '' if CN_URL.endswith('/') else '/'
     n = len(articles)
     i = 0
     er = 0
@@ -310,7 +431,52 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                     L.info(f'{doi} done. Uploaded {len(sm_dict)} files.')
                     for fi in sm_dict:
                         uploads[doi][fi] = sm_dict[fi]
+                        for f in files:
+                            if f['name'] == sm_dict[fi]['filename'] and f['computed_md5'] == sm_dict[fi]['md5']:
+                                f['d1_url'] = sm_dict[fi]['url']
                     save_uploads(uploads, fp=uploads_loc)
+                    # Convert the article to EML
+                    eml_string = figshare_to_eml(article)
+                    # Write the EML to file
+                    write_article(article=article, doi=doi, title=title, fmt='xml')
+                    # Upload the EML to the Member Node
+                    eml_pid, eml_md5, eml_size = upload_eml(orcid, doi, eml_string, client)
+                    if eml_pid:
+                        uploads[doi]['eml'] = {
+                            'filename': "eml_2_2_0.xml",
+                            'size': eml_size,
+                            'doi': doi,
+                            'identifier': eml_pid,
+                            'md5': eml_md5,
+                            'formatId': "https://eml.ecoinformatics.org/eml-2.2.0",
+                            'url': f"{CN_URL}{sep}v2/resolve/{eml_pid}",
+                        }
+                        save_uploads(uploads, fp=uploads_loc)
+                        # Generate the DataONE resource map
+                        pid_list = []
+                        for file_info in files:
+                            pid_list.append(file_info['identifier'])
+                        pid_list.append(eml_pid)
+                        resource_map = generate_resource_map(doi=doi, eml_pid=eml_pid, data_pids=pid_list)
+                        # Upload the resource map to the Member Node
+                        resource_map_pid, resource_map_md5, resource_map_size = upload_resource_map(orcid, doi, resource_map, client)
+                        # Put the resource map info in the uploads dictionary
+                        if resource_map_pid:
+                            uploads[doi]['resource_map'] = {
+                                'filename': 'resource_map.xml',
+                                'size': resource_map_size,
+                                'doi': doi,
+                                'identifier': resource_map_pid,
+                                'md5': resource_map_md5,
+                                'formatId': "http://www.openarchives.org/ore/terms/ResourceMap",
+                                'url': f"{CN_URL}{sep}v2/resolve/{resource_map_pid}",
+                            }
+                            save_uploads(uploads, fp=uploads_loc)
+                            L.info(f'{doi} Resource map uploaded successfully: {resource_map_pid}')
+                        else:
+                            L.error(f'{doi} Resource map upload failed')
+                    else:
+                        L.error(f'{doi} EML upload failed')
                 else:
                     L.info(f'No files to upload for {doi}')
                 succ_list.append(doi)
