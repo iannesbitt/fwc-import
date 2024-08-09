@@ -1,6 +1,30 @@
 import json
 from pathlib import Path
 from logging import getLogger
+from logging.config import dictConfig
+
+global CN_URL
+CN_URL = "https://cn-stage.test.dataone.org/cn"
+
+global DATA_ROOT
+DATA_ROOT = Path('')
+
+global CONFIG
+CONFIG = {
+    "rightsholder_orcid": "http://orcid.org/0000-0001-5828-6070",
+    "nodeid": "urn:node:mnTestKNB",
+    "mnurl": "https://dev.nceas.ucsb.edu/knb/d1/mn/",
+    "cnurl": "https://cn-stage.test.dataone.org/cn",
+    "metadata_json": "~/figshare-import/article-details-test.json",
+    "data_root": "/mnt/ceph/repos/si/figshare/FIG-12/"
+}
+
+CONFIG_LOC = Path('~/.config/figshare-import/').expanduser().absolute()
+LOGCONFIG = CONFIG_LOC.joinpath('log/config.json')
+with open(LOGCONFIG, 'r') as lc:
+    LOGGING_CONFIG = json.load(lc)
+dictConfig(LOGGING_CONFIG)
+WORK_LOC = Path('~/figshare-import/').expanduser().absolute()
 
 # a list of formats and their 
 fmts = {

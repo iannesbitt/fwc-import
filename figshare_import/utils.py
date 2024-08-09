@@ -9,8 +9,41 @@ from logging import getLogger
 from datetime import datetime
 
 from .conv import figshare_to_eml
-from .defs import GROUP_ID
+from .defs import GROUP_ID, CN_URL, CONFIG_LOC, CONFIG
 from .run_data_upload import get_doipath
+
+
+def get_token():
+    """
+    Get the DataONE token from the token file.
+    Paste your auth token into './.d1_token'.
+
+    :return: The DataONE token.
+    :rtype: str
+    """
+    # Set the D1 token
+    with open(Path(CONFIG_LOC / '.d1_token'), 'r') as tf:
+        return tf.read().split('\n')[0]
+
+
+def get_config():
+    """
+    Config values that are not the d1 token go in 'config.json'.
+
+    :return: The ORCID, node identifier, Member Node URL, and metadata JSON file.
+    :rtype: tuple
+    """
+    global DATA_ROOT
+    global CN_URL
+    global CONFIG
+    # Set your ORCID
+    CONFIG = CONFIG_LOC.joinpath('config.json')
+    with open(CONFIG, 'r') as lc:
+        config = json.load(lc)
+    # set the data root and CN URL
+    DATA_ROOT = Path(config['data_root'])
+    CN_URL = config['cnurl'] if config.get('cnurl') else CN_URL
+    return config['rightsholder_orcid'], config['nodeid'], config['mnurl'], str(Path(config['metadata_json']).expanduser())
 
 
 def parse_name(fullname: str):

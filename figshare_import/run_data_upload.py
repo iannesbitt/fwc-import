@@ -9,19 +9,10 @@ from d1_common.types import dataoneTypes
 from d1_common.resource_map import createSimpleResourceMap
 
 from logging import getLogger
-from logging.config import dictConfig
-CONFIG_LOC = Path('~/.config/figshare-import/').expanduser().absolute()
-LOGCONFIG = CONFIG_LOC.joinpath('log/config.json')
-with open(LOGCONFIG, 'r') as lc:
-    LOGGING_CONFIG = json.load(lc)
-dictConfig(LOGGING_CONFIG)
-WORK_LOC = Path('~/figshare-import/').expanduser().absolute()
 
-global DATA_ROOT
-DATA_ROOT = Path('')
-
-from .defs import fmts
-from .utils import get_article_list, load_uploads, save_uploads, write_article
+from .defs import fmts, CN_URL, DATA_ROOT, WORK_LOC
+from .utils import get_article_list, load_uploads, save_uploads, write_article, get_token, get_config
+from .conv import figshare_to_eml
 
 rpt_txt = """
 Package creation report:
@@ -34,35 +25,6 @@ Failed packages:
 Successful packages:
 %s
 """
-
-
-def get_token():
-    """
-    Get the DataONE token from the token file.
-    Paste your auth token into './.d1_token'.
-
-    :return: The DataONE token.
-    :rtype: str
-    """
-    # Set the D1 token
-    with open(Path(CONFIG_LOC / '.d1_token'), 'r') as tf:
-        return tf.read().split('\n')[0]
-
-
-def get_config():
-    """
-    Config values that are not the d1 token go in 'config.json'.
-
-    :return: The ORCID, node identifier, Member Node URL, and metadata JSON file.
-    :rtype: tuple
-    """
-    global DATA_ROOT
-    # Set your ORCID
-    CONFIG = CONFIG_LOC.joinpath('config.json')
-    with open(CONFIG, 'r') as lc:
-        config = json.load(lc)
-    DATA_ROOT = Path(config['data_root'])
-    return config['rightsholder_orcid'], config['nodeid'], config['mnurl'], str(Path(config['metadata_json']).expanduser())
 
 
 def generate_sys_meta(pid: str, sid: str, format_id: str, size: int, md5, now, orcid: str):
