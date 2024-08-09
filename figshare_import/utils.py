@@ -8,9 +8,7 @@ from pathlib import Path
 from logging import getLogger
 from datetime import datetime
 
-from .conv import figshare_to_eml
 from .defs import GROUP_ID, CN_URL, CONFIG_LOC, CONFIG
-from .run_data_upload import get_doipath
 
 
 def get_token():
@@ -128,6 +126,63 @@ def pathify(title: str):
     :rtype: str
     """
     return re.sub(r'[^\w\s]', '', title).replace(' ', '_')[:48]
+
+
+def get_doipath(doi: str):
+    """
+    Get the path to the data directory for a given DOI.
+
+    :param doi: The DOI to search for.
+    :type doi: str
+    :return: The path to the data directory.
+    :rtype: Path
+    """
+    L = getLogger(__name__)
+    global DATA_ROOT
+    doidir = Path(DATA_ROOT / doi)
+    if not doidir.exists():
+        L.info(f'{doidir} does not exist. Trying other versions...')
+        doidir = search_versions(doi)
+    return doidir
+
+
+def search_versions(doi: str):
+    """
+    Search the directory structure for a given DOI. If no dir is found, then
+    decrease the version at the end of the DOI until a directory is found that
+    matches. Return a list of files.
+
+    :param str doi: The DOI to search for.
+    :return: The path to the data directory.
+    :rtype: Path
+    """
+    global DATA_ROOT
+    L = getLogger(__name__)
+    doidir = Path(DATA_ROOT / doi)
+    if not doidir.exists():
+        # we need to figure out where the closest version is (or if it exists?)
+        try:
+            [doiroot, version] = doidir.__str__().split('.v')
+            version = int(version)
+            versions = 0
+            L.info(f'{doi} starting with version {version}')
+            while True:
+                version -= 1
+                moddir = Path(DATA_ROOT / f'{doiroot}.v{version}')
+                L.info(f'Trying {moddir}')
+                if moddir.exists():
+                    return moddir
+                else:
+                    if version > 0:
+                        continue
+                    else:
+                        L.info(f'Found {versions} versions of doi root {doi}')
+                        break
+        except ValueError:
+            L.info(f'{doi} has no version.')
+        except Exception as e:
+            L.error(f'{repr(e)} has occurred: {e}')
+    return doidir
 
 
 def write_article(article: dict, doi: str, title: str, fmt: str):

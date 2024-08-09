@@ -1,8 +1,8 @@
-import logging
+from logging import getLogger
 import d1_client.mnclient as mn
 from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
 
-from .utils import parse_name, get_lat_lon
+from .utils import parse_name, get_lat_lon, get_article_list, write_article
 from .defs import GROUP_ID
 
 
@@ -91,3 +91,32 @@ def figshare_to_eml(figshare: dict):
             southBoundingCoordinate = SubElement(boundingCoordinates, 'southBoundingCoordinate')
             southBoundingCoordinate.text = str(latlon.lat)
     return tostring(eml, encoding='unicode')
+
+
+def process_articles(articles: dict):
+    """
+    This function performs three actions:
+
+    1. Writes the original Figshare metadata to files in JSON format.
+    2. Converts the Figshare metadata to EML-formatted strings.
+    3. Writes the EML to XML.
+    Archives Figshare articles by writing them to files in different formats.
+
+    :param articles: The data containing articles.
+    :type articles: dict
+    :return: A list of processed articles in EML format.
+    :rtype: dict
+    """
+    L = getLogger(__name__)
+    articles = get_article_list(articles)
+    eml_list = []
+    i = 0
+    for article in articles:
+        L.debug(f'Starting record {i}')
+        write_article(article, fmt='json', doi=article.get('doi'), title=article.get('title'))
+        eml = figshare_to_eml(article)
+        write_article(eml, fmt='xml', doi=article.get('doi'), title=article.get('title'))
+        eml_list.append(eml)
+        i += 1
+
+    return eml_list
