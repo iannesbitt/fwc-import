@@ -172,33 +172,31 @@ def get_article_list(articles):
     return articles
 
 
-def process_articles(articles: dict):
+def rectify_uploads(uploads: Path | str, client: MemberNodeClient_2_0 | None=None):
     """
-    This function performs three actions:
+    Rectify the uploads dictionary with the DataONE object identifiers.
+    Write the updated uploads dictionary to the original file.
 
-    1. Writes the original Figshare metadata to files in JSON format.
-    2. Converts the Figshare metadata to EML-formatted strings.
-    3. Writes the EML to XML.
-    Archives Figshare articles by writing them to files in different formats.
-
-    :param articles: The data containing articles.
-    :type articles: dict
-    :return: A list of processed articles in EML format.
+    :param Path uploads: A dictionary containing upload information.
+    :param MemberNodeClient_2_0 client: A DataONE MemberNodeClient_2_0 object.
+    :return: A dictionary with updated upload information.
     :rtype: dict
     """
-    L = getLogger(__name__)
-    articles = get_article_list(articles)
-    eml_list = []
-    i = 0
-    for article in articles:
-        L.debug(f'Starting record {i}')
-        write_article(article, fmt='json', doi=article.get('doi'), title=article.get('title'))
-        eml = figshare_to_eml(article)
-        write_article(eml, fmt='xml', doi=article.get('doi'), title=article.get('title'))
-        eml_list.append(eml)
-        i += 1
-
-    return eml_list
+    if type(uploads) == str:
+        uploads = Path(uploads)
+    if not uploads.exists():
+        raise FileNotFoundError(f'Could not find an uploads info json file at {uploads}')
+    if not client:
+        orcid, node, mn_url, metadata_json = get_config()
+        options: dict = {
+            "headers": {"Authorization": "Bearer " + get_token()},
+            "timeout_sec": 9999,
+            }
+        client = MemberNodeClient_2_0(mn_url, **options)
+    uploads_dict = load_uploads(uploads)
+    uploads_dict = get_d1_ids(uploads_dict, client)
+    save_uploads(uploads_dict, fp=uploads)
+    return uploads_dict
 
 
 def get_d1_ids(filedict: dict, client: MemberNodeClient_2_0):
