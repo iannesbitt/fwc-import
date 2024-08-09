@@ -15,6 +15,8 @@ def figshare_to_eml(figshare: dict):
     :return: The EML-formatted string.
     :rtype: str
     """
+    L = getLogger(__name__)
+    L.info('Generating EML...')
     # Create the root element
     eml = Element('eml:eml', attrib={
         'xmlns:eml': 'eml://ecoinformatics.org/eml-2.1.1',
@@ -32,6 +34,7 @@ def figshare_to_eml(figshare: dict):
     id = SubElement(dataset, 'alternateIdentifier')
     id.text = figshare['doi']
     # Create the creator element(s) from the author list
+    L.info(f"Found {len(figshare['authors'])} authors")
     for author in figshare['authors']:
         creator = SubElement(dataset, 'creator')
         individualName = SubElement(creator, 'individualName')
@@ -40,6 +43,7 @@ def figshare_to_eml(figshare: dict):
         givenName.text = given
         surName = SubElement(individualName, 'surName')
         surName.text = family
+        L.info(f'Added author: {given} {family}')
     # Create the organization element using the group ID mapping
     organization = SubElement(dataset, 'organizationName')
     organization.text = GROUP_ID[figshare.get('group_id', 23417)]
@@ -54,11 +58,13 @@ def figshare_to_eml(figshare: dict):
     intellectualRights = SubElement(dataset, 'intellectualRights')
     para = SubElement(intellectualRights, 'para')
     para.text = f"{figshare['license']['name']} ({figshare['license']['url']})"
+    L.info(f"Found {len(figshare['tags'])} keyword tags in the article")
     # Create the keywordSet element and keyword(s) using the figshare tags list
     keywordSet = SubElement(dataset, 'keywordSet')
     for keyword in figshare['tags']:
         keyword_element = SubElement(keywordSet, 'keyword')
         keyword_element.text = keyword
+    L.info(f"Found {len(figshare['files'])} file(s) in the article")
     # Create the distribution element(s) using the figshare files list
     for file in figshare['files']:
         distribution = SubElement(dataset, 'distribution')
@@ -73,6 +79,7 @@ def figshare_to_eml(figshare: dict):
     # Create the geographic coverage element(s) using the spatial coverage derived from the figshare description
     latlon_pairs = get_lat_lon(figshare['description'])
     if latlon_pairs:
+        L.info(f'Found {len(latlon_pairs)} geographic coverage value(s) in article description')
         coverage = SubElement(dataset, 'coverage')
         geographicCoverage = SubElement(coverage, 'geographicCoverage')
         # Create a boundingCoordinates element for each lat/lon pair
@@ -90,6 +97,7 @@ def figshare_to_eml(figshare: dict):
             # South
             southBoundingCoordinate = SubElement(boundingCoordinates, 'southBoundingCoordinate')
             southBoundingCoordinate.text = str(latlon.lat)
+    L.info('EML generation complete')
     return tostring(eml, encoding='unicode')
 
 
@@ -101,6 +109,11 @@ def process_articles(articles: dict):
     2. Converts the Figshare metadata to EML-formatted strings.
     3. Writes the EML to XML.
     Archives Figshare articles by writing them to files in different formats.
+
+    :note:
+        This function is intended only to write Figshare articles to JSON and
+        convert them to EML/XML. It does not upload the EML to a DataONE
+        Member Node.
 
     :param articles: The data containing articles.
     :type articles: dict

@@ -351,8 +351,9 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
             doi = article.get('doi')
             title = article.get('title')
             L.info(f'({i}/{n}) Working on {doi}')
-            write_article(article=article, doi=doi, title=title, fmt='json')
+            af = write_article(article=article, doi=doi, title='original_metadata', fmt='json')
             files = article.get('files')
+            files.append({'name': f'original_metadata.json', 'computed_md5': hashlib.md5(af.read_bytes()).hexdigest()})
             if not (uploads.get(doi)):
                 uploads[doi] = {}
             else:
@@ -377,50 +378,50 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                             if f['name'] == sm_dict[fi]['filename'] and f['computed_md5'] == sm_dict[fi]['md5']:
                                 f['d1_url'] = sm_dict[fi]['url']
                     save_uploads(uploads, fp=uploads_loc)
-                    # Convert the article to EML
-                    eml_string = figshare_to_eml(article)
-                    # Write the EML to file
-                    write_article(article=article, doi=doi, title=title, fmt='xml')
-                    # Upload the EML to the Member Node
-                    eml_pid, eml_md5, eml_size = upload_eml(orcid, doi, eml_string, client)
-                    if eml_pid:
-                        uploads[doi]['eml'] = {
-                            'filename': "eml_2_2_0.xml",
-                            'size': eml_size,
+                else:
+                    L.info(f'No data files to upload for {doi}')
+                # Convert the article to EML
+                eml_string = figshare_to_eml(article)
+                # Write the EML to file
+                write_article(article=article, doi=doi, title=title, fmt='xml')
+                # Upload the EML to the Member Node
+                eml_pid, eml_md5, eml_size = upload_eml(orcid, doi, eml_string, client)
+                if eml_pid:
+                    uploads[doi]['eml'] = {
+                        'filename': "eml_2_2_0.xml",
+                        'size': eml_size,
+                        'doi': doi,
+                        'identifier': eml_pid,
+                        'md5': eml_md5,
+                        'formatId': "https://eml.ecoinformatics.org/eml-2.2.0",
+                        'url': f"{CN_URL}{sep}v2/resolve/{eml_pid}",
+                    }
+                    save_uploads(uploads, fp=uploads_loc)
+                    # Generate the DataONE resource map
+                    pid_list = []
+                    for file_info in files:
+                        pid_list.append(file_info['identifier'])
+                    pid_list.append(eml_pid)
+                    resource_map = generate_resource_map(doi=doi, eml_pid=eml_pid, data_pids=pid_list)
+                    # Upload the resource map to the Member Node
+                    resource_map_pid, resource_map_md5, resource_map_size = upload_resource_map(orcid, doi, resource_map, client)
+                    # Put the resource map info in the uploads dictionary
+                    if resource_map_pid:
+                        uploads[doi]['resource_map'] = {
+                            'filename': 'resource_map.xml',
+                            'size': resource_map_size,
                             'doi': doi,
-                            'identifier': eml_pid,
-                            'md5': eml_md5,
-                            'formatId': "https://eml.ecoinformatics.org/eml-2.2.0",
-                            'url': f"{CN_URL}{sep}v2/resolve/{eml_pid}",
+                            'identifier': resource_map_pid,
+                            'md5': resource_map_md5,
+                            'formatId': "http://www.openarchives.org/ore/terms/ResourceMap",
+                            'url': f"{CN_URL}{sep}v2/resolve/{resource_map_pid}",
                         }
                         save_uploads(uploads, fp=uploads_loc)
-                        # Generate the DataONE resource map
-                        pid_list = []
-                        for file_info in files:
-                            pid_list.append(file_info['identifier'])
-                        pid_list.append(eml_pid)
-                        resource_map = generate_resource_map(doi=doi, eml_pid=eml_pid, data_pids=pid_list)
-                        # Upload the resource map to the Member Node
-                        resource_map_pid, resource_map_md5, resource_map_size = upload_resource_map(orcid, doi, resource_map, client)
-                        # Put the resource map info in the uploads dictionary
-                        if resource_map_pid:
-                            uploads[doi]['resource_map'] = {
-                                'filename': 'resource_map.xml',
-                                'size': resource_map_size,
-                                'doi': doi,
-                                'identifier': resource_map_pid,
-                                'md5': resource_map_md5,
-                                'formatId': "http://www.openarchives.org/ore/terms/ResourceMap",
-                                'url': f"{CN_URL}{sep}v2/resolve/{resource_map_pid}",
-                            }
-                            save_uploads(uploads, fp=uploads_loc)
-                            L.info(f'{doi} Resource map uploaded successfully: {resource_map_pid}')
-                        else:
-                            L.error(f'{doi} Resource map upload failed')
+                        L.info(f'{doi} Resource map uploaded successfully: {resource_map_pid}')
                     else:
-                        L.error(f'{doi} EML upload failed')
+                        L.error(f'{doi} Resource map upload failed')
                 else:
-                    L.info(f'No files to upload for {doi}')
+                    L.error(f'{doi} EML upload failed')
                 succ_list.append(doi)
             except Exception as e:
                 er += 1

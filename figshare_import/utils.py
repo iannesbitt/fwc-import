@@ -194,30 +194,35 @@ def write_article(article: dict, doi: str, title: str, fmt: str):
     :param path: The format to write the article in (e.g., 'json', 'xml').
     :type path: Path
     """
+    L = getLogger(__name__)
     doipath = get_doipath(doi)
-    path = Path(doipath / pathify(title) + f".{fmt}")
+    path = Path(doipath / f"{pathify(title)}.{fmt}")
     with open(str(Path(path)), 'w') as f:
         if fmt == 'json':
             json.dump(article, fp=f, indent=2)
         elif fmt == 'xml':
             f.write(article)
+    L.info(f'Wrote {fmt} file to {path}')
+    return path
 
 
-def get_article_list(articles):
+def get_article_list(article_file: Path | str):
     """
     Retrieves the list of articles from the provided data.
 
-    :param articles: The data containing articles.
+    :param articles: The file containing article metadata.
     :type articles: dict or list
     :return: The list of articles.
     :rtype: list
     """
     L = getLogger(__name__)
+    af = Path(article_file)
+    articles = json.loads(af.read_bytes())
     alist = None
     try:
         alist = articles.get('articles')
     except:
-        L.info('articles object is not a dict. List, perhaps?')
+        L.info(f'articles object is not a dict but {type(articles)}. Trying to use it as a list...')
     if alist:
         articles = alist
     else:
