@@ -69,7 +69,12 @@ fmts = {
     '.fasta': 'application/x-fasta',
     '.fastq': 'application/x-fasta',
     '.fas': 'application/x-fasta',
-    '.gpx': 'application/gpx+xml'
+    '.gpx': 'application/gpx+xml',
+    '.json': 'application/json',
+    '.geojson': 'application/geo+json',
+    '.shp': 'application/x-qgis',
+    '.tif': 'image/tiff',
+    '.tiff': 'image/tiff',
 }
 
 GROUP_ID = {
