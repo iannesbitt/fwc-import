@@ -70,6 +70,18 @@ def parse_name(fullname: str):
     return given, family
 
 
+def fix_datetime(date: str):
+    """
+    Fix the datetime string.
+
+    :param date: The date string, formatted as '%Y-%m-%dT%H:%M:%SZ'.
+    :type date: str
+    :return: The fixed date string in '%Y-%m-%d' format.
+    :rtype: str
+    """
+    return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d')
+
+
 def dms_to_decimal(degrees, minutes, seconds, direction):
     decimal = float(degrees) + float(minutes)/60 + float(seconds)/3600
     if direction in ['S', 'W']:
