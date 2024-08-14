@@ -71,19 +71,19 @@ fmts = {
 }
 
 GROUP_ID = {
-    46785: "CFCH",
-    23468: "MCI",
-    23471: "NASM",
-    35808: "NMAA",
-    23477: "NMNH",
-    23492: "NMAH",
-    28985: "NMAI",
-    23474: "NZSCBI",
-    23480: "OCIO",
-    48638: "OIR",
-    23483: "SERC",
-    23489: "SLA",
-    23486: "STRI",
+    46785: "Smithsonian Center for Folklife and Cultural Heritage",
+    23468: "Smithsonian Museum Conservation Institute",
+    23471: "Smithsonian National Air & Space Museum",
+    35808: "Smithsonian National Museum of Asian Art",
+    23477: "Smithsonian National Museum of Natural History",
+    23492: "Smithsonian National Museum of American History",
+    28985: "Smithsonian National Museum of the American Indian",
+    23474: "National Zoo and Smithsonian Conservation Biology Institute",
+    23480: "Snithsonian Office of the Chief Information Officer",
+    48638: "Smithsonian Office of International Relations",
+    23483: "Smithsonian Environmental Research Center",
+    23489: "Smithsonian Libraries and Archives",
+    23486: "Smithsonian Tropical Research Institute",
     23417: "Smithsonian Research Data"
 }
 
