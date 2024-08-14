@@ -19,7 +19,7 @@ def figshare_to_eml(figshare: dict):
     L.info('Generating EML...')
     # Create the root element
     eml = Element('eml:eml', attrib={
-        'xmlns:eml': 'eml://ecoinformatics.org/eml-2.2.0',
+        'xmlns:eml': 'https://eml.ecoinformatics.org/eml-2.2.0',
         'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
         'xsi:schemaLocation': 'https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd',
         'packageId': f"doi:{figshare['doi']}",
