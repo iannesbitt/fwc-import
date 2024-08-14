@@ -209,7 +209,7 @@ def search_versions(doi: str):
     return doidir
 
 
-def write_article(article: dict, doi: str, title: str, fmt: str):
+def write_article(article: dict | str, doi: str, title: str, fmt: str):
     """
     Writes the article dictionary to a file.
 
@@ -221,12 +221,13 @@ def write_article(article: dict, doi: str, title: str, fmt: str):
     L = getLogger(__name__)
     doipath = get_doipath(doi)
     path = Path(doipath / f"{pathify(title)}.{fmt}")
+    L.info(f'Writing {fmt} file to {path}')
     with open(str(Path(path)), 'w') as f:
         if fmt == 'json':
             json.dump(article, fp=f, indent=2)
         elif fmt == 'xml':
             f.write(article)
-    L.info(f'Wrote {fmt} file to {path}')
+    L.info(f'Wrote {fmt}.')
     return path
 
 
