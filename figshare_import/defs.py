@@ -12,6 +12,8 @@ DATA_ROOT = Path('')
 global CONFIG
 CONFIG = {
     "rightsholder_orcid": "http://orcid.org/0000-0001-5828-6070",
+    "write_groups": ["CN=Test_Group,DC=dataone,DC=org"],
+    "changePermission_groups": ["CN=Test_Group,DC=dataone,DC=org"],
     "nodeid": "urn:node:mnTestKNB",
     "mnurl": "https://dev.nceas.ucsb.edu/knb/d1/mn/",
     "cnurl": "https://cn-stage.test.dataone.org/cn",
