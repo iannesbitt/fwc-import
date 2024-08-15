@@ -65,16 +65,17 @@ def figshare_to_eml(figshare: dict):
     para = SubElement(intellectualRights, 'para')
     para.text = f"{figshare['license']['name']} ({figshare['license']['url']})"
     # add coverage elements
+    coverage = None
     # Create the geographic coverage element(s) using the spatial coverage derived from the figshare description
     latlon_pairs = get_lat_lon(figshare['description'])
     if latlon_pairs:
         L.info(f'Found {len(latlon_pairs)} geographic coverage value(s) in article description')
         coverage = SubElement(dataset, 'coverage')
-        geographicCoverage = SubElement(coverage, 'geographicCoverage')
-        geographicDescription = SubElement(geographicCoverage, 'geographicDescription')
-        geographicDescription.text = 'Bounding box derived from article description'
-        # Create a boundingCoordinates element for each lat/lon pair
         for latlon in latlon_pairs:
+            # Create a geographicCoverage element for each lat/lon pair
+            geographicCoverage = SubElement(coverage, 'geographicCoverage')
+            geographicDescription = SubElement(geographicCoverage, 'geographicDescription')
+            geographicDescription.text = 'Bounding coordinate derived from article description'
             boundingCoordinates = SubElement(geographicCoverage, 'boundingCoordinates')
             # West
             westBoundingCoordinate = SubElement(boundingCoordinates, 'westBoundingCoordinate')
@@ -90,6 +91,8 @@ def figshare_to_eml(figshare: dict):
             southBoundingCoordinate.text = str(latlon.lat)
     if False:
         # not yet implemented
+        if not coverage:
+            coverage = SubElement(dataset, 'coverage')
         temporalCoverage = SubElement(coverage, 'temporalCoverage')
     # Create the contact element using the first author's givenName and surName
     contact = SubElement(dataset, 'contact')
