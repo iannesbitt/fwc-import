@@ -50,6 +50,7 @@ fmts = {
     '.jp2': 'image/jp2',
     '.png': 'image/png',
     '.tif': 'image/geotiff',
+    '.tiff': 'image/geotiff',
     '.svg': 'image/svg+xml',
     '.nc': 'netCDF-4',
     '.py': 'application/x-python',
@@ -73,8 +74,6 @@ fmts = {
     '.json': 'application/json',
     '.geojson': 'application/geo+json',
     '.shp': 'application/x-qgis',
-    '.tif': 'image/tiff',
-    '.tiff': 'image/tiff',
 }
 
 GROUP_ID = {
