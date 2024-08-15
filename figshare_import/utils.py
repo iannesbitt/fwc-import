@@ -62,6 +62,22 @@ def get_config():
     return config
 
 
+def create_client(mn_url: str, auth_token: str):
+    """
+    Create a Member Node client.
+
+    :param str mn_url: The URL of the Member Node.
+    :param str auth_token: The authentication token.
+    :return: The Member Node client.
+    :rtype: MemberNodeClient_2_0
+    """
+    options: dict = {
+        "headers": {"Authorization": "Bearer " + auth_token},
+        "timeout_sec": 9999,
+        }
+    return MemberNodeClient_2_0(mn_url, **options)
+
+
 def parse_name(fullname: str):
     """
     Parse full names into given and family designations.

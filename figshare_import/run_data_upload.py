@@ -12,7 +12,9 @@ from logging import getLogger
 from copy import deepcopy
 
 from .defs import fmts, CN_URL, DATA_ROOT, WORK_LOC
-from .utils import get_article_list, load_uploads, save_uploads, write_article, get_token, get_config, get_doipath, generate_access_policy
+from .utils import get_article_list, load_uploads, save_uploads, \
+            write_article, get_token, get_config, create_client, \
+            get_doipath, generate_access_policy
 from .conv import figshare_to_eml
 
 rpt_txt = """
@@ -518,13 +520,8 @@ def main():
     L.info(f'Rightsholder ORCiD {orcid}')
     L.info(f'Using {node} at {mn_url}')
     L.info(f'Root path: {DATA_ROOT}')
-    # Set the token in the request header
-    options: dict = {
-        "headers": {"Authorization": "Bearer " + auth_token},
-        "timeout_sec": 9999,
-        }
     # Create the Member Node Client
-    client: MemberNodeClient_2_0 = MemberNodeClient_2_0(mn_url, **options)
+    client: MemberNodeClient_2_0 = create_client(mn_url, auth_token=auth_token)
     articles = get_article_list(metadata_json)
     L.info(f'Found {len(articles)} metadata records')
     upload_manager(articles=articles, orcid=orcid, client=client, node=node)
