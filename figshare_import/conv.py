@@ -85,6 +85,9 @@ def figshare_to_eml(figshare: dict):
         L.info(f'Found {len(latlon_pairs)} geographic coverage value(s) in article description')
         coverage = SubElement(dataset, 'coverage')
         for latlon in latlon_pairs:
+            if (latlon.lat > 90) or (latlon.lat < -90) or (latlon.lon > 180) or (latlon.lon < -180):
+                L.warning(f'Invalid latitude/longitude pair: {latlon.lat}, {latlon.lon}')
+                continue
             # Create a geographicCoverage element for each lat/lon pair
             geographicCoverage = SubElement(coverage, 'geographicCoverage')
             geographicDescription = SubElement(geographicCoverage, 'geographicDescription')
