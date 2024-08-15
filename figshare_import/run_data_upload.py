@@ -365,13 +365,13 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
     succ_list = []
     err_list = []
     uploads_loc = Path(WORK_LOC / f'{node}.json')
-    old_eml_pid, old_resource_map_pid = None, None
     try:
         uploads = load_uploads(uploads_loc)
     except FileNotFoundError:
         uploads = {}
     try:
         for article in articles:
+            old_eml_pid, old_resource_map_pid = None, None
             i += 1
             L.debug(f'Article:\n{article}')
             doi = article.get('doi')
@@ -485,8 +485,10 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                         save_uploads(uploads, fp=uploads_loc)
                         L.info(f'{doi} Resource map uploaded successfully: {resource_map_pid}')
                     else:
+                        uploads[doi]['resource_map'] = None
                         raise exceptions.DataONEException(f'{doi} Resource map upload failed')
                 else:
+                    uploads[doi]['eml'] = None
                     raise exceptions.DataONEException(f'{doi} EML upload failed')
                 succ_list.append(doi)
             except Exception as e:
