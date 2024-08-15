@@ -125,12 +125,17 @@ def figshare_to_eml(figshare: dict):
     L.debug(f"figshare['files'] before EML serialization: {figshare.get('files')}")
     L.info(f"Found {len(figshare['files'])} file(s) in the article")
     for file in figshare['files']:
-        if ['.shp', '.geojson', '.kml', '.gpx'] in file['name']:
-            etype = 'spatialVector'
-        elif ['.tif', '.tiff', '.geotiff'] in file['name']:
-            etype = 'spatialRaster'
-        elif ['.csv', '.txt', '.xls', '.xlsx', '.tsv'] in file['name']:
-            etype = 'dataTable'
+        if False:
+            # not yet implemented
+            file_extensions = ['.shp', '.geojson', '.kml', '.gpx']
+            if any(ext in file['name'] for ext in file_extensions):
+                etype = 'spatialVector'
+            file_extensions = ['.tif', '.tiff', '.geotiff']
+            if any(ext in file['name'] for ext in file_extensions):
+                etype = 'spatialRaster'
+            file_extensions = ['.csv', '.txt', '.xls', '.xlsx', '.tsv']
+            if any(ext in file['name'] for ext in file_extensions):
+                etype = 'dataTable'
         else:
             etype = 'otherEntity'
         entity = SubElement(dataset, etype, id=file['pid'])
