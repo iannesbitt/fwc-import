@@ -426,7 +426,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                 # Convert the article to EML
                 eml_string = figshare_to_eml(article)
                 # Write the EML to file
-                write_article(article=eml_string, doi=doi, title=title, fmt='xml')
+                eml_fn = write_article(article=eml_string, doi=doi, title=title, fmt='xml')
                 # Upload the EML to the Member Node
                 if uploads[doi].get('eml'):
                     old_eml_pid = uploads[doi]['eml']['identifier']
@@ -438,7 +438,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                     sysmeta_obsolete_updates(client, old_eml_pid, eml_pid)
                 if eml_pid:
                     uploads[doi]['eml'] = {
-                        'filename': "eml_2_2_0.xml",
+                        'filename': f"{eml_fn.name}",
                         'size': eml_size,
                         'doi': doi,
                         'identifier': eml_pid,
