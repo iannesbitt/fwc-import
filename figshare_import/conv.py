@@ -121,15 +121,28 @@ def figshare_to_eml(figshare: dict):
     publisher = SubElement(dataset, 'publisher')
     organization = SubElement(publisher, 'organizationName')
     organization.text = GROUP_ID[figshare.get('group_id', 23417)]
-    # Create the otherEntity element(s) using the figshare files list
+    # Create the entity element(s) using the figshare files list
     L.debug(f"figshare['files'] before EML serialization: {figshare.get('files')}")
     L.info(f"Found {len(figshare['files'])} file(s) in the article")
     for file in figshare['files']:
-        otherEntity = SubElement(dataset, 'otherEntity', id=file['pid'])
-        entityName = SubElement(otherEntity, 'entityName')
+        if ['.shp', '.geojson', '.kml', '.gpx'] in file['name']:
+            etype = 'spatialVector'
+        elif ['.tif', '.tiff', '.geotiff'] in file['name']:
+            etype = 'spatialRaster'
+        elif ['.csv', '.txt', '.xls', '.xlsx', '.tsv'] in file['name']:
+            etype = 'dataTable'
+        else:
+            etype = 'otherEntity'
+        entity = SubElement(dataset, etype, id=file['pid'])
+        entityName = SubElement(entity, 'entityName')
         entityName.text = file['name']
-        entityType = SubElement(otherEntity, 'entityType')
-        entityType.text = file['mimetype']
+        if etype == 'otherEntity':
+            entityType = SubElement(entity, 'entityType')
+            entityType.text = file['mimetype']
+        else:
+            entityAdditionalInfo = SubElement(entity, 'additionalInfo')
+            para = SubElement(entityAdditionalInfo, 'para')
+            para.text = f"File type: {file['mimetype']}"
     L.info('EML generation complete')
     return tostring(eml, encoding='unicode')
 
