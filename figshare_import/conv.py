@@ -141,16 +141,19 @@ def figshare_to_eml(figshare: dict):
                 etype = 'dataTable'
         else:
             etype = 'otherEntity'
-        entity = SubElement(dataset, etype, id=file['pid'])
-        entityName = SubElement(entity, 'entityName')
-        entityName.text = file['name']
-        if etype == 'otherEntity':
-            entityType = SubElement(entity, 'entityType')
-            entityType.text = file['mimetype']
+        if file.get('pid'):
+            entity = SubElement(dataset, etype, id=file['pid'])
+            entityName = SubElement(entity, 'entityName')
+            entityName.text = file['name']
+            if etype == 'otherEntity':
+                entityType = SubElement(entity, 'entityType')
+                entityType.text = file['mimetype']
+            else:
+                entityAdditionalInfo = SubElement(entity, 'additionalInfo')
+                para = SubElement(entityAdditionalInfo, 'para')
+                para.text = f"File type: {file['mimetype']}"
         else:
-            entityAdditionalInfo = SubElement(entity, 'additionalInfo')
-            para = SubElement(entityAdditionalInfo, 'para')
-            para.text = f"File type: {file['mimetype']}"
+            L.warning(f'No pid found for file {file["name"]} during EML creation')
     L.info('EML generation complete')
     return tostring(eml, encoding='unicode')
 
