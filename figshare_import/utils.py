@@ -123,6 +123,13 @@ def dms_to_decimal(degrees, minutes, seconds, direction):
     return decimal
 
 
+def dm_to_decimal(degrees, minutes, direction):
+    dd = int(degrees) + float(minutes) / 60
+    if direction in ['S', 'W']:
+        dd = -dd
+    return dd
+
+
 def get_lat_lon(desc: str):
     """
     Parse latitude and longitude from description and convert to decimal degrees.
@@ -134,12 +141,10 @@ def get_lat_lon(desc: str):
         r'\b([+-]?\d+(\.\d+)?)°?\s*([NS]),\s*([+-]?\d+(\.\d+)?)°?\s*([EW])\b',  # 8.910718°N, -79.528919°
         r'\b(\d+)°\s*(\d+(\.\d+)?)\'?\s*([NS]),\s*(\d+)°\s*(\d+(\.\d+)?)\'?\s*([EW])\b',  # 7° 38.422'N, 81° 42.079'W
         r'\b(\d+)°\s*(\d+)\'\s*(\d+(\.\d+)?)\"?\s*([NS]),\s*(\d+)°\s*(\d+)\'\s*(\d+(\.\d+)?)\"?\s*([EW])\b',  # 9°9'42.36"N, 79°50'15.67"W
-        r'\b(\d+)°\s*(\d+)′\s*([NS])\s*latitude,\s*(\d+)°\s*(\d+)′\s*([EW])\s*longitude\b',  # 9°41′ S latitude, 76°24′ W longitude
+        r'\b(\d+)°\s*(\d+)′\s*([NS])\s*latitude,\s*(\d+)°\s*(\d+)′\s*([EW])\s*longitude\b',  # 0°41′ S latitude, 76°24′ W longitude
         r'\b(\d+)°\s*(\d+(\.\d+)?)\'?\s*([NS])\s+(\d+)°\s*(\d+(\.\d+)?)\'?\s*([EW])\b'  # 8° 38.743'N    79° 2.887'W
     ]
-
     latlon = []
-
     if '°' in desc:
         for pattern in patterns:
             matches = re.findall(pattern, desc)
@@ -169,10 +174,17 @@ def get_lat_lon(desc: str):
                     lon = dms_to_decimal(match[5], match[6], match[7], match[9])
                     L.info(f'Found DMS; lat, lon: {lat}, {lon}')
                     latlon.append(LatLon3Tuple(lat, lon, 0))
+                elif len(match) == 6 and 'latitude' in desc and 'longitude' in desc:
+                    # Degrees and minutes with direction (special format)
+                    lat = dm_to_decimal(match[0], match[1], match[2])
+                    lon = dm_to_decimal(match[3], match[4], match[5])
+                    L.info(f'Found degrees and minutes; lat, lon: {lat}, {lon}')
+                    latlon.append(LatLon3Tuple(lat, lon, 0))
         return latlon
     else:
         L.info('No lat/lon pairs found in description.')
         return None
+
 
 def pathify(title: str):
     """
