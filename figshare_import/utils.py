@@ -410,7 +410,7 @@ def save_uploads(uploads: dict, fp: Path='./uploads.json'):
         with open(fp, 'w') as f:
             json.dump(uploads, fp=f, indent=2)
         L.info(f'Wrote {l} uploads to {fp}')
-        L.debug(f'Saved upload dump:\n{json.dumps(uploads,indent=2)}')
+        #L.debug(f'Saved upload dump:\n{json.dumps(uploads,indent=2)}') # very verbose
         return fp
     else:
         L.error(f'Could not find folder to write uploads file! Dumping them here:\n{json.dumps(uploads, indent=2)}')
