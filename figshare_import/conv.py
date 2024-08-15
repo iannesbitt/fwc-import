@@ -1,6 +1,7 @@
 from logging import getLogger
 import d1_client.mnclient as mn
 from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
+from html2text import html2text
 
 from .utils import parse_name, get_lat_lon, get_article_list, write_article, fix_datetime
 from .defs import GROUP_ID
@@ -52,8 +53,14 @@ def figshare_to_eml(figshare: dict):
     pubDate.text = fix_datetime(figshare['published_date'])
     # Create the abstract element using the figshare description
     abstract = SubElement(dataset, 'abstract')
-    para = SubElement(abstract, 'para')
-    para.text = figshare['description']
+    try:
+        abs_text = html2text(figshare['description'])
+        markdown = SubElement(abstract, 'markdown')
+        markdown.text = abs_text
+    except Exception as e:
+        L.error(f'Error converting HTML to text: {repr(e)}')
+        para = SubElement(abstract, 'para')
+        para.text = figshare['description']
     # Create the keywordSet element and keyword(s) using the figshare tags list
     L.info(f"Found {len(figshare['tags'])} keyword tags in the article")
     keywordSet = SubElement(dataset, 'keywordSet')
