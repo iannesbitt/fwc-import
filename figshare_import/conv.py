@@ -60,6 +60,12 @@ def figshare_to_eml(figshare: dict):
     for keyword in figshare['tags']:
         keyword_element = SubElement(keywordSet, 'keyword')
         keyword_element.text = keyword
+    # Add additionalInfo stating that this document was imported from figshare
+    additionalInfo = SubElement(dataset, 'additionalInfo')
+    para = SubElement(additionalInfo, 'para')
+    para.text = """This metadata record was imported from Figshare using an automated process.
+    The original metadata used for creating this record is preserved as a JSON file in this data package.
+    Errors should be reported to the repository administrator."""
     # Create the intellectualRights element using the license name and URL
     intellectualRights = SubElement(dataset, 'intellectualRights')
     para = SubElement(intellectualRights, 'para')
