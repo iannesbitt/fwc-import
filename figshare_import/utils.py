@@ -2,11 +2,14 @@ import json
 import re
 from pygeodesy.namedTuples import LatLon3Tuple
 from logging import getLogger
+
 from d1_client.mnclient_2_0 import MemberNodeClient_2_0
+from d1_common.types import dataoneTypes
+from d1_common import const
 
 from pathlib import Path
 from logging import getLogger
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .defs import GROUP_ID, CN_URL, CONFIG_LOC, CONFIG
 
@@ -24,6 +27,19 @@ def get_token():
         return tf.read().split('\n')[0]
 
 
+def get_ll_token():
+    """
+    Get the DataONE token from the token file.
+    Paste your auth token into './.d1_token'.
+
+    :return: The DataONE token.
+    :rtype: str
+    """
+    # Set the D1 token
+    with open(Path(CONFIG_LOC / '.ll_token'), 'r') as tf:
+        return tf.read().split('\n')[0]
+
+
 def get_config():
     """
     Config values that are not the d1 token go in 'config.json'.
@@ -35,13 +51,15 @@ def get_config():
     global CN_URL
     global CONFIG
     # Set your ORCID
-    CONFIG = CONFIG_LOC.joinpath('config.json')
-    with open(CONFIG, 'r') as lc:
+    CONFIG_F = CONFIG_LOC.joinpath('config.json')
+    with open(CONFIG_F, 'r') as lc:
         config = json.load(lc)
+    CONFIG = config
     # set the data root and CN URL
     DATA_ROOT = Path(config['data_root'])
     CN_URL = config['cnurl'] if config.get('cnurl') else CN_URL
-    return config['rightsholder_orcid'], config['nodeid'], config['mnurl'], str(Path(config['metadata_json']).expanduser())
+    config['metadata_json'] = str(Path(config['metadata_json']).expanduser().absolute())
+    return config
 
 
 def parse_name(fullname: str):
@@ -272,7 +290,8 @@ def rectify_uploads(uploads: Path | str, client: MemberNodeClient_2_0 | None=Non
     if not uploads.exists():
         raise FileNotFoundError(f'Could not find an uploads info json file at {uploads}')
     if not client:
-        orcid, node, mn_url, metadata_json = get_config()
+        config = get_config()
+        mn_url = config['mnurl']
         options: dict = {
             "headers": {"Authorization": "Bearer " + get_token()},
             "timeout_sec": 9999,
@@ -325,6 +344,61 @@ def get_d1_ids(filedict: dict, client: MemberNodeClient_2_0):
                 file_info['formatId'] = obj_info[md5]['formatId']
                 file_info['url'] = obj_info[md5]['url']
     return filedict
+
+
+def generate_access_policy():
+    """
+    Creates the access policy for the object. Note that the permission is set to 'read'.
+    
+    :return: The access policy.
+    :rtype: dataoneTypes.accessPolicy
+    """
+    accessPolicy = dataoneTypes.accessPolicy()
+    accessRule = dataoneTypes.AccessRule()
+    accessRule.subject.append(const.SUBJECT_PUBLIC)
+    permission = dataoneTypes.Permission('read')
+    accessRule.permission.append(permission)
+    accessPolicy.append(accessRule)
+    accessRule = dataoneTypes.AccessRule()
+    config = get_config()
+    if config.get('write_groups'):
+        for group in config.get('write_groups'):
+            writeGroup = dataoneTypes.Subject(group)
+            accessRule.subject.append(writeGroup)
+            permission = dataoneTypes.Permission('write')
+            accessRule.permission.append(permission)
+            accessPolicy.append(accessRule)
+    if config.get('changePermission_groups'):
+        for group in config.get('changePermission_groups'):
+            changePermissionGroup = dataoneTypes.Subject(group)
+            accessRule.subject.append(changePermissionGroup)
+            permission = dataoneTypes.Permission('changePermission')
+            accessRule.permission.append(permission)
+            accessPolicy.append(accessRule)
+    return accessPolicy
+
+
+def fix_access_policies():
+    config = get_config()
+    token = get_ll_token()
+    mnurl = config['mnurl']
+    # Initialize the MemberNodeClient_2_0
+    options: dict = {
+        "headers": {"Authorization": "Bearer " + token},
+        "timeout_sec": 9999,
+        }
+    client: MemberNodeClient_2_0 = MemberNodeClient_2_0(mnurl, **options)
+    # Calculate the date for two months ago
+    three_days_ago = datetime.now() - timedelta(days=3)
+    # Retrieve the list of objects uploaded in the last two months
+    object_list = client.listObjects(fromDate=three_days_ago)
+    for obj in object_list.objectInfo:
+        # Retrieve the system metadata
+        sysmeta = client.getSystemMetadata(obj.identifier.value())
+        # Modify the access policy
+        sysmeta.accessPolicy = generate_access_policy()
+        # Update the system metadata with the new access policy
+        client.updateSystemMetadata(obj.identifier.value(), sysmeta)
 
 
 def save_uploads(uploads: dict, fp: Path='./uploads.json'):
