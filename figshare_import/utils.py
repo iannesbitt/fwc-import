@@ -181,6 +181,8 @@ def get_lat_lon(desc: str):
                     lon = dms_to_decimal(match[5], match[6], match[7], match[9])
                     L.info(f'Found DMS; lat, lon: {lat}, {lon}')
                     latlon.append(LatLon3Tuple(lat, lon, 0))
+        # consolidate duplicates
+        latlon = list(set(latlon))
         return latlon
     else:
         L.info('No lat/lon pairs found in description.')
