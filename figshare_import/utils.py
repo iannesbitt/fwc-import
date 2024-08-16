@@ -410,6 +410,7 @@ def rectify_uploads(uploads: Path | str, client: MemberNodeClient_2_0 | None=Non
         client = MemberNodeClient_2_0(mn_url, **options)
     uploads_dict = load_uploads(uploads)
     uploads_dict = get_d1_ids(uploads_dict, client)
+    client._session.close()
     save_uploads(uploads_dict, fp=uploads)
     return uploads_dict
 
@@ -501,19 +502,17 @@ def fix_access_policies():
     modifies their access policies to include the groups specified in the
     config document.
     """
-    # Rest of the code...
     config = get_config()
     token = get_ll_token()
     mnurl = config['mnurl']
-    # Initialize the MemberNodeClient_2_0
+    # Initialize the mn client
     options: dict = {
         "headers": {"Authorization": "Bearer " + token},
         "timeout_sec": 9999,
         }
     client: MemberNodeClient_2_0 = MemberNodeClient_2_0(mnurl, **options)
-    # Calculate the date for two months ago
+    # Retrieve the list of objects uploaded in the last three days
     three_days_ago = datetime.now() - timedelta(days=3)
-    # Retrieve the list of objects uploaded in the last two months
     object_list = client.listObjects(fromDate=three_days_ago)
     for obj in object_list.objectInfo:
         # Retrieve the system metadata
@@ -522,6 +521,7 @@ def fix_access_policies():
         sysmeta.accessPolicy = generate_access_policy()
         # Update the system metadata with the new access policy
         client.updateSystemMetadata(obj.identifier.value(), sysmeta)
+    client._session.close()
 
 
 def save_uploads(uploads: dict, fp: Path='./uploads.json'):
