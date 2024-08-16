@@ -17,17 +17,6 @@ DataONE in general, and figshare-import in particular, are open source, communit
 
 Documentation is a work in progress. All functions have reStructuredText docstrings and fairly well commented. In the future, a documentation site will be built into the repository.
 
-## Development build
-
-This is a python package, and built using the [Python Poetry](https://python-poetry.org) build tool.
-
-To install locally, create a virtual environment for python 3.9+, 
-install poetry, and then install or build the package with `poetry install` or `poetry build`, respectively.
-
-To run tests, navigate to the root directory and run `pytest -s`. The test suite contains tests that
-take a longer time to run (relating to the storage of large files) - to execute all tests, run
-`pytest --run-slow`. To see detailed
-
 ## Quickstart
 
 1. Set the config values in `~/.config/figshare-import/config.json`. Be mindful to run test operations only on staging servers prior to operating in a production environment:
@@ -72,6 +61,16 @@ In Python:
 >>> run_figshare_download()
 >>> run_data_upload()
 ```
+
+## Development and testing
+
+This is a python package built using the [Python Poetry](https://python-poetry.org) build tool.
+
+To install locally, create a virtual environment for python 3.9+, 
+install poetry, and then install or build the package with `poetry install` or `poetry build`, respectively.
+
+To run unit tests, navigate to the root directory and run `python -m unittest test.py`.
+Tests have not yet been fully implemented for this software.
 
 ## License
 ```
