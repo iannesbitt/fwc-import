@@ -322,7 +322,7 @@ def upload_resource_map(doi: str, resource_map: ResourceMap, client: MemberNodeC
     resource_map_dmd = client.create(resource_map_pid, resource_map_bytes, resource_map_sm)
     if isinstance(resource_map_dmd, dataoneTypes.Identifier):
         try:
-            L.info(f'{doi} Received response for resource map upload: {resource_map_dmd.value()}\n{resource_map_dmd}')
+            L.info(f'{doi} Received response for resource map upload: {resource_map_dmd.value()}')
             if resource_map_dmd.value() == resource_map_pid:
                 L.info(f'{doi} Resource map uploaded successfully: {resource_map_pid}')
             else:
@@ -515,7 +515,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
             except Exception as e:
                 er += 1
                 err_list.append(doi)
-                L.error(f'{doi} / {repr(e)}: {e}')
+                L.error(f'{doi} / {repr(e)}')
     except KeyboardInterrupt:
         L.info('Caught KeyboardInterrupt; generating report...')
     finally:
