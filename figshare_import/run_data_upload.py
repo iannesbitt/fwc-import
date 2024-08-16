@@ -185,9 +185,9 @@ def upload_files(orcid: str, doi: str, files: list[Path], client: MemberNodeClie
     sep = '' if CN_URL.endswith('/') else '/'
     data_pids = None
     sm_dict = {}
-    # Create and upload the EML
-    # Get and upload the data
+    # get the path to the data directory
     doidir = get_doipath(doi)
+    # get the paths to the files
     files = get_filepaths(doidir=doidir, files=files)
     flen = len(files)
     if flen == 0:
@@ -198,9 +198,10 @@ def upload_files(orcid: str, doi: str, files: list[Path], client: MemberNodeClie
     for f in files:
         i += 1
         try:
+            # get the format of the file
             fformat = get_format(f)
             data_pid = f"urn:uuid:{str(uuid.uuid4())}"
-            L.debug(f'{doi} Reading {f.name}')
+            L.debug(f'{doi} Reading {f.name} ({fformat})')
             data_bytes = f.read_bytes()
             L.debug(f'{doi} Generating sysmeta for {f.name}')
             data_sm, md5, size = generate_system_metadata(pid=data_pid,
@@ -211,10 +212,12 @@ def upload_files(orcid: str, doi: str, files: list[Path], client: MemberNodeClie
             L.info(f'{doi} ({i}/{flen}) Uploading {f.name} ({round(size/(1024*1024), 1)} MB)')
             dmd = client.create(data_pid, data_bytes, data_sm)
             if isinstance(dmd, dataoneTypes.Identifier):
+                # if the response is an identifier, the upload was successful
                 try:
-                    L.info(f'{doi} Received response for science object upload: {dmd.value()}\n{dmd}')
+                    L.info(f'{doi} Received response for science object upload: {dmd.value()}')
                 except Exception as e:
                     L.error(f'{doi} Received <d1_common.types.generated.dataoneTypes_v1.Identifier> but could not print value: {repr(e)}')
+                # add the data pid to the list of data pids
                 data_pids.append(data_pid)
                 sm_dict[md5] = {
                     'filename': f.name,
@@ -338,7 +341,8 @@ def upload_resource_map(doi: str, resource_map: ResourceMap, client: MemberNodeC
 
 def report(succ: int, fail: int, finished_dois: list, failed_dois: list):
     """
-    Generate a short report with the successes and failures of the process.
+    Generate and print a short report with the successes and failures of the
+    process.
 
     :param int succ: The number of successful uploads.
     :param int fail: The number of failed uploads.
@@ -382,6 +386,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
             doi = article.get('doi')
             title = article.get('title')
             L.info(f'({i}/{n}) Working on {doi}')
+            # write the original figshare metadata to file and keep track of its attributes
             af = write_article(article=article, doi=doi, title='original_metadata', fmt='json')
             files = article.get('files')
             files.append({
@@ -389,6 +394,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                 'computed_md5': hashlib.md5(af.read_bytes()).hexdigest(),
                 'mimetype': 'application/json',
             })
+            # check if the article has already been uploaded
             ulist = deepcopy(files)
             if not (uploads.get(doi)):
                 uploads[doi] = {}
@@ -397,10 +403,13 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                 for uf in uploads.get(doi):
                     L.debug(f'Already uploaded file: {uploads[doi][uf]}')
                     for f in files:
+                        # if the file is already uploaded and its md5 matches the current file
+                        # add the pid and url to the files object for inclusion in the resource map
                         if f.get('computed_md5') in uploads[doi]:
                             f['d1_url'] = uploads[doi][f.get('computed_md5')]['url']
                             f['pid'] = uploads[doi][f.get('computed_md5')]['identifier']
                         else:
+                            # otherwise, add the file to the list of files related to the article
                             files.append({
                                 'pid': uploads[doi][uf]['identifier'],
                                 'name': uploads[doi][uf]['filename'],
@@ -411,6 +420,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                             })
                     fn = 0
                     for f in ulist:
+                        # if the file is already uploaded, remove it from the list of files to upload
                         if uploads[doi][uf]['filename'] == f['name']:
                             prev_upls += 1
                             del ulist[fn]
@@ -418,13 +428,17 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                 L.info(f'Found {prev_upls} files that were already uploaded associated with {doi}')
             try:
                 if len(ulist) > 0:
+                    # Upload the data files to the Member Node if there are any in the ulist
                     sm_dict = upload_files(orcid, doi, ulist, client)
                     L.info(f'{doi} done. Uploaded {len(sm_dict)} files.')
                     for fi in sm_dict:
+                        # add the uploaded files to the uploads dictionary
                         uploads[doi][fi] = sm_dict[fi]
                         for f in files:
+                            # add the dataone url to the files object for inclusion in the resource map
                             if (f['name'] == sm_dict[fi]['filename']) and (f['computed_md5'] == fi):
                                 f['d1_url'] = sm_dict[fi]['url']
+                                f['pid'] = sm_dict[fi]['identifier']
                     save_uploads(uploads, fp=uploads_loc)
                 else:
                     L.info(f'No data files to upload for {doi}')
@@ -455,6 +469,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                     # Generate the DataONE resource map
                     pid_list = [eml_pid]
                     for f in files:
+                        # add the data pids to the list of pids for the resource map
                         if f.get('pid'):
                             pid_list.append(f.get('pid'))
                         else:

@@ -100,19 +100,25 @@ def parse_name(fullname: str):
     """
     given, family = None, None
     if ', ' in fullname:
+        # split the fullname by comma and space, assign the family name and given name
         [family, given] = fullname.title().split(', ')[:2]
     if (given == None) and (family == None):
         for q in [' del ', ' van ', ' de ', ' von ', ' der ', ' di ', ' la ', ' le ', ' da ', ' el ', ' al ', ' bin ']:
             if q in fullname.lower():
+                # split the fullname by the query string, assign the given name and family name
                 [given, family] = fullname.lower().split(q)
+                # capitalize the and concat the query string to the family name
                 given = given.title()
                 family = f'{q.strip()}{family.title()}'
     if (given == None) and (family == None):
+        # split the fullname by space and capitalize each part
         nlist = fullname.title().split()
+        # assign the last part as the family name and the first part as the given name
         family = nlist[-1]
         if len(nlist) >= 2:
             given = nlist[0]
             for i in range(1, len(nlist)-1):
+                # concatenate the remaining parts as the given name
                 given = f'{given} {nlist[i]}'
     if (not given) or (not family):
         L = getLogger()
@@ -134,6 +140,20 @@ def fix_datetime(date: str):
 
 
 def dms_to_decimal(degrees, minutes, seconds, direction):
+    """
+    Convert degrees, minutes, and seconds to decimal degrees.
+    
+    :param degrees: The degrees value.
+    :type degrees: str
+    :param minutes: The minutes value.
+    :type minutes: str
+    :param seconds: The seconds value.
+    :type seconds: str
+    :param direction: Cardinal direction (N, S, E, W).
+    :type direction: str
+    :return: Decimal degrees.
+    :rtype: float
+    """
     decimal = float(degrees) + float(minutes)/60 + float(seconds)/3600
     if direction in ['S', 'W']:
         decimal *= -1
@@ -141,6 +161,18 @@ def dms_to_decimal(degrees, minutes, seconds, direction):
 
 
 def dm_to_decimal(degrees, minutes, direction):
+    """
+    Convert degrees and decimal minutes to decimal degrees.
+    
+    :param degrees: The degrees value.
+    :type degrees: str
+    :param minutes: The minutes value.
+    :type minutes: str
+    :param direction: Cardinal direction (N, S, E, W).
+    :type direction: str
+    :return: Decimal degrees.
+    :rtype: float
+    """
     dd = int(degrees) + float(minutes) / 60
     if direction in ['S', 'W']:
         dd = -dd
@@ -258,7 +290,7 @@ def search_versions(doi: str):
     """
     Search the directory structure for a given DOI. If no dir is found, then
     decrease the version at the end of the DOI until a directory is found that
-    matches. Return a list of files.
+    matches. Return a path with the appropriate DOI version.
 
     :param str doi: The DOI to search for.
     :return: The path to the data directory.
@@ -270,11 +302,13 @@ def search_versions(doi: str):
     if not doidir.exists():
         # we need to figure out where the closest version is (or if it exists?)
         try:
+            # split the doi into the root and version
             [doiroot, version] = doidir.__str__().split('.v')
             version = int(version)
             versions = 0
             L.info(f'{doi} starting with version {version}')
             while True:
+                # decrement the version and check if the directory exists
                 version -= 1
                 moddir = Path(DATA_ROOT / f'{doiroot}.v{version}')
                 L.info(f'Trying {moddir}')
