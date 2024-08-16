@@ -5,9 +5,18 @@ from logging.config import dictConfig
 
 global CN_URL
 CN_URL = "https://cn-stage.test.dataone.org/cn"
+"""
+The URL for the Coordinating Node.
+Defaults to the DataONE staging CN: ``https://cn-stage.test.dataone.org/cn``
+"""
 
 global DATA_ROOT
 DATA_ROOT = Path('')
+"""
+The root directory for the data files.
+Defaults to the current directory but should be set appropriately in the
+config file.
+"""
 
 global CONFIG
 CONFIG = {
@@ -20,13 +29,36 @@ CONFIG = {
     "metadata_json": "~/figshare-import/article-details-test.json",
     "data_root": "/mnt/ceph/repos/si/figshare/FIG-12/"
 }
+"""
+The configuration dictionary. These values are read from the config file.
+Defaults to the values above but should be set appropriately in the config file.
+"""
 
 CONFIG_LOC = Path('~/.config/figshare-import/').expanduser().absolute()
+"""
+The location of the configuration file.
+Defaults to ``~/.config/figshare-import/``.
+"""
+
 LOGCONFIG = CONFIG_LOC.joinpath('log/config.json')
+"""
+The location of the logging configuration file.
+Defaults to ``~/.config/figshare-import/log/config.json``.
+"""
+
 with open(LOGCONFIG, 'r') as lc:
     LOGGING_CONFIG = json.load(lc)
+    """
+    The logging configuration dictionary.
+    Defaults to the values in the file specified by ``LOGCONFIG``.
+    """
+
 dictConfig(LOGGING_CONFIG)
 WORK_LOC = Path('~/figshare-import/').expanduser().absolute()
+"""
+The location of the working directory.
+Defaults to ``~/figshare-import/``.
+"""
 
 # a list of formats and their 
 fmts = {
@@ -75,6 +107,9 @@ fmts = {
     '.geojson': 'application/geo+json',
     '.shp': 'application/x-qgis',
 }
+"""
+A dictionary of file extensions and their corresponding MIME types.
+"""
 
 GROUP_ID = {
     46785: "Smithsonian Center for Folklife and Cultural Heritage",
@@ -92,80 +127,10 @@ GROUP_ID = {
     23486: "Smithsonian Tropical Research Institute",
     23417: "Smithsonian Research Data"
 }
-
-DEFAULT_CONTEXT = 'figshare'
-
-def define_context(context: str=DEFAULT_CONTEXT):
-    '''
-    '''
-    L = getLogger(__name__)
-    path = Path(f'~/bin/figshare-import/figshare_import/manifest/{context}.jsonld').expanduser()
-    if path.exists():
-        with open(path, 'r') as f:
-            return json.load(f)
-    else:
-        path = Path(f'{context}').expanduser()
-        if path.exists():
-            with open(path, 'r') as f:
-                return json.load(f)
-        else:
-            path = Path(f'~/bin/figshare-import/figshare_import/manifest/{DEFAULT_CONTEXT}.jsonld').expanduser()
-            with open(path, 'r') as f:
-                return json.load(f)
-
-
-SO_TYPES = {
-    "dataset": "Dataset",
-    "figure": "Dataset",
-    "preprint": "ScholarlyAricle",
-    "book": "Book",
-    "software": "SoftwareApplication",
-    "media": "MediaObject"
-}
-
-
-SO_TEMPLATE = {
-    "@context": {
-        "@vocab": "https://schema.org/"
-    },
-    "type": "Dataset",
-    "conditionsOfAccess": "unrestricted",
-    "isAccessibleForFree": True,
-    "id": "",
-    "creator": {"@list": []},
-    "datePublished": "",
-    "description": {
-        "@type": "text",
-        "@value": ""
-    },
-    "distribution": [
-        {
-            "@type": "DataDownload",
-            "contentUrl": "",
-            "encodingFormat": ""
-        }
-    ],
-    "funder": [],
-    "identifier": {
-        "@type": "PropertyValue",
-        "propertyID": "https://registry.identifiers.org/registry/doi",
-        "url": "",
-        "value": ""
-    },
-    "keywords": [],
-    "license": {'type': "CreativeWork"},
-    "name": "",
-    "spatialCoverage": {
-        "geo": [
-            {
-                "@type": "GeoShape",
-                "box": "",
-            },
-        ]
-    },
-    "version": "",
-}
-
+"""
+A dictionary of Figshare group IDs and their corresponding Smithsonian units.
+This will be moved to a configuration file.
+"""
 
 TEMP_ARTICLE = {
       "files": [
@@ -283,3 +248,6 @@ TEMP_ARTICLE = {
       "resource_title": None,
       "resource_doi": None
     }
+"""
+An example Figshare metadata dictionary.
+"""

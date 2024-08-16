@@ -28,6 +28,9 @@ Failed packages:
 Successful packages:
 %s
 """
+"""
+The package creation report text template.
+"""
 
 
 def generate_sys_meta(pid: str, sid: str, format_id: str, size: int, md5, now, orcid: str):

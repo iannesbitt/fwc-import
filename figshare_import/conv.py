@@ -10,6 +10,28 @@ from .defs import GROUP_ID
 def figshare_to_eml(figshare: dict):
     """
     Construct a minimal EML document from a figshare article.
+    This function will extract author information and parse it into first and
+    last names. It will also extract the publication date, abstract, keywords,
+    license, and file information from the figshare article. Additionally, it
+    will attempt to extract spatial coverage information from the description
+    field using a set of regular expressions.
+
+    Since the Figshare metadata does not provide author contact information,
+    the first author is used as the contact person in the EML document. Author
+    ORCID IDs are included in the creator element and the dataset contact if
+    they are present in the author list.
+
+    The types of location strings that are supported by the
+    :func:`utils.get_lat_lon` function are as follows:
+    
+    1. Decimal degrees: ``8.994410°, -79.543000°``
+    2. Decimal degrees with direction: ``8.910718°N, -79.528919°``
+    3. Degrees and decimal minutes with direction: ``7° 38.422'N, 81° 42.079'W``
+    4. Degrees, minutes, and seconds with direction: ``9°9'42.36"N, 79°50'15.67"W``
+    5. Degrees and minutes with direction (special format): ``0°41′ S latitude, 76°24′ W longitude``
+    6. Degrees and decimal minutes with direction (alternative format): ``8° 38.743'N    79° 2.887'W``
+    7. Location prefix with decimal degrees: ``Location: 7.69633 -81.61603``
+    
 
     :param figshare: The figshare article data.
     :type figshare: dict

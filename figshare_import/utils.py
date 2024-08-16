@@ -17,7 +17,7 @@ from .defs import GROUP_ID, CN_URL, CONFIG_LOC, CONFIG
 def get_token():
     """
     Get the DataONE token from the token file.
-    Paste your auth token into './.d1_token'.
+    Paste your auth token into ``{CONFIG_LOC}/.d1_token``.
 
     :return: The DataONE token.
     :rtype: str
@@ -29,8 +29,8 @@ def get_token():
 
 def get_ll_token():
     """
-    Get the DataONE token from the token file.
-    Paste your auth token into './.d1_token'.
+    Get the long-lived DataONE token from the token file.
+    Paste the long-lived token into ``{CONFIG_LOC}/.ll_token``.
 
     :return: The DataONE token.
     :rtype: str
@@ -42,7 +42,8 @@ def get_ll_token():
 
 def get_config():
     """
-    Config values that are not the d1 token go in 'config.json'.
+    Config values not including the DataONE token are stored in
+    ``{CONFIG_LOC}/config.json``.
 
     :return: The ORCID, node identifier, Member Node URL, and metadata JSON file.
     :rtype: tuple
@@ -64,7 +65,7 @@ def get_config():
 
 def create_client(mn_url: str, auth_token: str):
     """
-    Create a Member Node client.
+    Instantiate a DataONE Member Node client.
 
     :param str mn_url: The URL of the Member Node.
     :param str auth_token: The authentication token.
@@ -81,12 +82,27 @@ def create_client(mn_url: str, auth_token: str):
 def parse_name(fullname: str):
     """
     Parse full names into given and family designations.
+
+    This function parses full names into given and family names. It supports
+    various formats of names, including those with multiple given names and
+    family names.
+
+    Supported formats:
+    Multiple given names: ``John Jacob Jingleheimer Schmidt``
+    Given name and family name: ``John Schmidt``
+    Family name and given name: ``Schmidt, John``
+    Given name and family name with prefix: ``John von Schmidt``
+
+    :param fullname: The full name to be parsed.
+    :type fullname: str
+    :return: A tuple containing the given name and family name.
+    :rtype: tuple[str, str]
     """
     given, family = None, None
     if ', ' in fullname:
         [family, given] = fullname.title().split(', ')[:2]
     if (given == None) and (family == None):
-        for q in [' del ', ' van ']:
+        for q in [' del ', ' van ', ' de ', ' von ', ' der ', ' di ', ' la ', ' le ', ' da ', ' el ', ' al ', ' bin ']:
             if q in fullname.lower():
                 [given, family] = fullname.lower().split(q)
                 given = given.title()
@@ -106,11 +122,12 @@ def parse_name(fullname: str):
 
 def fix_datetime(date: str):
     """
-    Fix the datetime string.
+    This function converts the Figshare datetime string format to
+    a format that DataONE will accept.
 
-    :param date: The date string, formatted as '%Y-%m-%dT%H:%M:%SZ'.
+    :param date: The date string, formatted as ``%Y-%m-%dT%H:%M:%SZ``.
     :type date: str
-    :return: The fixed date string in '%Y-%m-%d' format.
+    :return: The fixed date string in ``%Y-%m-%d`` format.
     :rtype: str
     """
     return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d')
@@ -133,7 +150,25 @@ def dm_to_decimal(degrees, minutes, direction):
 def get_lat_lon(desc: str):
     """
     Parse latitude and longitude from description and convert to decimal degrees.
-    Return all pairs found as a list of LatLon3Tuple objects.
+
+    This function extracts latitude and longitude pairs from a given description string.
+    It supports various formats of location strings and converts them to decimal degrees.
+    The function returns all pairs found as a list of LatLon3Tuple objects.
+
+    Supported formats:
+    
+    1. Decimal degrees: `8.994410°, -79.543000°`
+    2. Decimal degrees with direction: `8.910718°N, -79.528919°`
+    3. Degrees and decimal minutes with direction: `7° 38.422'N, 81° 42.079'W`
+    4. Degrees, minutes, and seconds with direction: `9°9'42.36"N, 79°50'15.67"W`
+    5. Degrees and minutes with direction (special format): `0°41′ S latitude, 76°24′ W longitude`
+    6. Degrees and decimal minutes with direction (alternative format): `8° 38.743'N    79° 2.887'W`
+    7. Location prefix with decimal degrees: `Location: 7.69633 -81.61603`
+
+    :param desc: The description string containing latitude and longitude information.
+    :type desc: str
+    :returns: A list of LatLon3Tuple objects representing the extracted latitude and longitude pairs, or None if no pairs are found.
+    :rtype: list of LatLon3Tuple or None
     """
     L = getLogger(__name__)
     patterns = [
@@ -261,6 +296,9 @@ def search_versions(doi: str):
 def write_article(article: dict | str, doi: str, title: str, fmt: str):
     """
     Writes the article dictionary to a file.
+    This function can write the article in either JSON or XML format.
+    It is used to preserve the original Figshare article in JSON format
+    and to write the EML XML file for upload to DataONE.
 
     :param article: The article data to write.
     :type article: dict
@@ -282,7 +320,8 @@ def write_article(article: dict | str, doi: str, title: str, fmt: str):
 
 def get_article_list(article_file: Path | str):
     """
-    Retrieves the list of articles from the provided data.
+    Retrieves the list of articles from the provided metadata file.
+    The metadata file location is specified in the config file.
 
     :param articles: The file containing article metadata.
     :type articles: dict or list
@@ -308,8 +347,15 @@ def get_article_list(article_file: Path | str):
 
 def rectify_uploads(uploads: Path | str, client: MemberNodeClient_2_0 | None=None):
     """
-    Rectify the uploads dictionary with the DataONE object identifiers.
+    Rectify the uploads dictionary with DataONE object identifiers.
     Write the updated uploads dictionary to the original file.
+
+    .. warning::
+        
+        This script does not check for duplicates, or whether the document is
+        at the head of the version chain! Running this when there are multiple
+        EMLs with the same MD5 on the server can lead to hazardous
+        consequences.
 
     :param Path uploads: A dictionary containing upload information.
     :param MemberNodeClient_2_0 client: A DataONE MemberNodeClient_2_0 object.
@@ -337,6 +383,9 @@ def rectify_uploads(uploads: Path | str, client: MemberNodeClient_2_0 | None=Non
 def get_d1_ids(filedict: dict, client: MemberNodeClient_2_0):
     """
     Retrieve DataONE object identifiers for hashed files in a file dictionary.
+    This function uses a :py:mod:`d1_client.mnclient_2_0.MemberNodeClient_2_0`
+    client to retrieve a list of objects from the Member Node and updates the
+    file dictionary with the object identifiers, formatIds, and URLs.
 
     :param dict filedict: A dictionary containing file information.
     :param MemberNodeClient_2_0 client: A DataONE MemberNodeClient_2_0 object.
@@ -410,6 +459,15 @@ def generate_access_policy():
 
 
 def fix_access_policies():
+    """
+    Fix the access policies for objects uploaded in the last three days.
+
+    This function uses a :py:mod:`d1_client.mnclient_2_0.MemberNodeClient_2_0`
+    client to retrieve a list of objects uploaded in the last three days, and
+    modifies their access policies to include the groups specified in the
+    config document.
+    """
+    # Rest of the code...
     config = get_config()
     token = get_ll_token()
     mnurl = config['mnurl']
@@ -434,6 +492,14 @@ def fix_access_policies():
 
 def save_uploads(uploads: dict, fp: Path='./uploads.json'):
     """
+    Save the uploads dictionary to a file.
+    This function is called multiple times throughout the script operation to
+    save information about the files uploaded to the DataONE Member Node.
+
+    :param dict uploads: A dictionary containing upload information.
+    :param Path fp: The file path to write the uploads dictionary to.
+    :return: The file path to the uploads dictionary.
+    :rtype: Path
     """
     L = getLogger(__name__)
     l = len(uploads)
@@ -449,6 +515,13 @@ def save_uploads(uploads: dict, fp: Path='./uploads.json'):
 
 def load_uploads(fp: Path='./uploads.json'):
     """
+    Load the uploads dictionary from a file.
+    This function is called at the beginning of the script to load information
+    about the files uploaded to the DataONE Member Node.
+
+    :param Path fp: The file path to read the uploads dictionary from.
+    :return: The uploads dictionary.
+    :rtype: dict
     """
     L = getLogger(__name__)
     if fp.exists():
