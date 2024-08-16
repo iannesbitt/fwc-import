@@ -142,10 +142,11 @@ def get_lat_lon(desc: str):
         r'\b(\d+)°\s*(\d+(\.\d+)?)\'?\s*([NS]),\s*(\d+)°\s*(\d+(\.\d+)?)\'?\s*([EW])\b',  # 7° 38.422'N, 81° 42.079'W
         r'\b(\d+)°\s*(\d+)\'\s*(\d+(\.\d+)?)\"?\s*([NS]),\s*(\d+)°\s*(\d+)\'\s*(\d+(\.\d+)?)\"?\s*([EW])\b',  # 9°9'42.36"N, 79°50'15.67"W
         r'\b(\d+)°\s*(\d+)′\s*([NS])\s*latitude,\s*(\d+)°\s*(\d+)′\s*([EW])\s*longitude\b',  # 0°41′ S latitude, 76°24′ W longitude
-        r'\b(\d+)°\s*(\d+(\.\d+)?)\'?\s*([NS])\s+(\d+)°\s*(\d+(\.\d+)?)\'?\s*([EW])\b'  # 8° 38.743'N    79° 2.887'W
+        r'\b(\d+)°\s*(\d+(\.\d+)?)\'?\s*([NS])\s+(\d+)°\s*(\d+(\.\d+)?)\'?\s*([EW])\b',  # 8° 38.743'N    79° 2.887'W
+        r'\bLocation:\s*([+-]?\d+(\.\d+)?)\s+([+-]?\d+(\.\d+)?)\b'  # Location: 7.69633 -81.61603
     ]
     latlon = []
-    if '°' in desc:
+    if ('°' in desc) or ('Location:' in desc):
         for pattern in patterns:
             matches = re.findall(pattern, desc)
             for match in matches:
