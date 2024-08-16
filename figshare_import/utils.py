@@ -156,6 +156,12 @@ def get_lat_lon(desc: str):
                     lon = float(match[2])
                     L.info(f'Found decimal degrees; lat, lon: {lat}, {lon}')
                     latlon.append(LatLon3Tuple(lat, lon, 0))
+                elif len(match) == 6 and 'latitude' in desc and 'longitude' in desc:
+                    # Degrees and minutes with direction (special format)
+                    lat = dm_to_decimal(match[0], match[1], match[2])
+                    lon = dm_to_decimal(match[3], match[4], match[5])
+                    L.info(f'Found degrees and minutes; lat, lon: {lat}, {lon}')
+                    latlon.append(LatLon3Tuple(lat, lon, 0))
                 elif len(match) == 6:
                     # Decimal degrees with direction
                     lat = float(match[0]) * (-1 if match[2] == 'S' else 1)
@@ -173,12 +179,6 @@ def get_lat_lon(desc: str):
                     lat = dms_to_decimal(match[0], match[1], match[2], match[4])
                     lon = dms_to_decimal(match[5], match[6], match[7], match[9])
                     L.info(f'Found DMS; lat, lon: {lat}, {lon}')
-                    latlon.append(LatLon3Tuple(lat, lon, 0))
-                elif len(match) == 6 and 'latitude' in desc and 'longitude' in desc:
-                    # Degrees and minutes with direction (special format)
-                    lat = dm_to_decimal(match[0], match[1], match[2])
-                    lon = dm_to_decimal(match[3], match[4], match[5])
-                    L.info(f'Found degrees and minutes; lat, lon: {lat}, {lon}')
                     latlon.append(LatLon3Tuple(lat, lon, 0))
         return latlon
     else:
