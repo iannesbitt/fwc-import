@@ -26,6 +26,7 @@ setuptools.setup(
     },
     entry_points = {
         'console_scripts': [
+            'figsharedownload=figshare_import.run_figshare_download:main',
             'figshareimport=figshare_import.run_data_upload:main',
             'testfigshareimport=figshare_import.test:main'
         ],
