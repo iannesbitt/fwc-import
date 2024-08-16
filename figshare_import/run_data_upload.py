@@ -453,8 +453,9 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                     pid_list = [eml_pid]
                     for f in files:
                         if f.get('pid'):
-                            pid_list.append(f['pid'])
+                            pid_list.append(f.get('pid'))
                         else:
+                            L.warning(f'{doi} No pid key found for {f["name"]}')
                             if f.get('computed_md5') in sm_dict:
                                 pid_list.append(sm_dict[f['computed_md5']]['identifier'])
                             else:
