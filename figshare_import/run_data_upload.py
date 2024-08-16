@@ -523,7 +523,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
         report(succ=i-er, fail=er, finished_dois=succ_list, failed_dois=err_list)
 
 
-def main():
+def run_data_upload():
     """
     Set config items then start upload loop. This function is called when the
     script is run directly.
@@ -551,4 +551,4 @@ if __name__ == "__main__":
     """
     Running directly.
     """
-    main()
+    run_data_upload()
