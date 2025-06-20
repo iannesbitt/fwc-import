@@ -26,24 +26,24 @@ CONFIG = {
     "nodeid": "urn:node:mnTestKNB",
     "mnurl": "https://dev.nceas.ucsb.edu/knb/d1/mn/",
     "cnurl": "https://cn-stage.test.dataone.org/cn",
-    "metadata_json": "~/figshare-import/article-details-test.json",
-    "data_root": "/mnt/ceph/repos/si/figshare/FIG-12/"
+    "metadata_json": "~/fwc-import/article-details-test.json",
+    "data_root": "/mnt/ceph/repos/fwc/fwc-import/"
 }
 """
 The configuration dictionary. These values are read from the config file.
 Defaults to the values above but should be set appropriately in the config file.
 """
 
-CONFIG_LOC = Path('~/.config/figshare-import/').expanduser().absolute()
+CONFIG_LOC = Path('~/.config/fwc-import/').expanduser().absolute()
 """
 The location of the configuration file.
-Defaults to ``~/.config/figshare-import/``.
+Defaults to ``~/.config/fwc-import/``.
 """
 
 LOGCONFIG = CONFIG_LOC.joinpath('log/config.json')
 """
 The location of the logging configuration file.
-Defaults to ``~/.config/figshare-import/log/config.json``.
+Defaults to ``~/.config/fwc-import/log/config.json``.
 """
 
 with open(LOGCONFIG, 'r') as lc:
@@ -54,10 +54,10 @@ with open(LOGCONFIG, 'r') as lc:
     """
 
 dictConfig(LOGGING_CONFIG)
-WORK_LOC = Path('~/figshare-import/').expanduser().absolute()
+WORK_LOC = Path('~/fwc-import/').expanduser().absolute()
 """
 The location of the working directory.
-Defaults to ``~/figshare-import/``.
+Defaults to ``~/fwc-import/``.
 """
 
 # a list of formats and their 
@@ -112,23 +112,9 @@ A dictionary of file extensions and their corresponding MIME types.
 """
 
 GROUP_ID = {
-    46785: "Smithsonian Center for Folklife and Cultural Heritage",
-    23468: "Smithsonian Museum Conservation Institute",
-    23471: "Smithsonian National Air & Space Museum",
-    35808: "Smithsonian National Museum of Asian Art",
-    23477: "Smithsonian National Museum of Natural History",
-    23492: "Smithsonian National Museum of American History",
-    28985: "Smithsonian National Museum of the American Indian",
-    23474: "National Zoo and Smithsonian Conservation Biology Institute",
-    23480: "Snithsonian Office of the Chief Information Officer",
-    48638: "Smithsonian Office of International Relations",
-    23483: "Smithsonian Environmental Research Center",
-    23489: "Smithsonian Libraries and Archives",
-    23486: "Smithsonian Tropical Research Institute",
-    23417: "Smithsonian Research Data"
 }
 """
-A dictionary of Figshare group IDs and their corresponding Smithsonian units.
+A dictionary of FWC group IDs and their corresponding departments/institutions.
 This will be moved to a configuration file.
 """
 

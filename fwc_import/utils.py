@@ -128,8 +128,8 @@ def parse_name(fullname: str):
 
 def fix_datetime(date: str):
     """
-    This function converts the Figshare datetime string format to
-    a format that DataONE will accept.
+    This function converts a datetime string format to
+    a date format that DataONE will accept.
 
     :param date: The date string, formatted as ``%Y-%m-%dT%H:%M:%SZ``.
     :type date: str
@@ -331,7 +331,7 @@ def write_article(article: dict | str, doi: str, title: str, fmt: str):
     """
     Writes the article dictionary to a file.
     This function can write the article in either JSON or XML format.
-    It is used to preserve the original Figshare article in JSON format
+    It is used to preserve the original metadata record in JSON format
     and to write the EML XML file for upload to DataONE.
 
     :param article: The article data to write.

@@ -15,7 +15,7 @@ from .defs import fmts, CN_URL, DATA_ROOT, WORK_LOC
 from .utils import get_article_list, load_uploads, save_uploads, \
             write_article, get_token, get_config, create_client, \
             get_doipath, generate_access_policy
-from .conv import figshare_to_eml
+from .conv import fwc_to_eml
 
 rpt_txt = """
 Package creation report:
@@ -386,7 +386,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
             doi = article.get('doi')
             title = article.get('title')
             L.info(f'({i}/{n}) Working on {doi}')
-            # write the original figshare metadata to file and keep track of its attributes
+            # write the original metadata to file and keep track of its attributes
             af = write_article(article=article, doi=doi, title='original_metadata', fmt='json')
             files = article.get('files')
             files.append({
@@ -443,7 +443,7 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
                 else:
                     L.info(f'No data files to upload for {doi}')
                 # Convert the article to EML
-                eml_string = figshare_to_eml(article)
+                eml_string = fwc_to_eml(article)
                 # Write the EML to file
                 eml_fn = write_article(article=eml_string, doi=doi, title=title, fmt='xml')
                 # Upload the EML to the Member Node

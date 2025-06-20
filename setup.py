@@ -6,12 +6,12 @@ with open('README.md', 'r') as fh:
 setuptools.setup(
     author='Ian Nesbitt',
     author_email='nesbitt@nceas.ucsb.edu',
-    name='figshare_import',
+    name='fwc_import',
     version='0.1.0',
-    description='DataONE Figshare Qualified Dublin Core staging workflow',
+    description='DataONE FWC staging workflow',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/DataONEorg/figshare-import',
+    url='https://github.com/DataONEorg/fwc-import',
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=[
@@ -26,9 +26,8 @@ setuptools.setup(
     },
     entry_points = {
         'console_scripts': [
-            'figsharedownload=figshare_import.run_figshare_download:run_figshare_download',
-            'figshareimport=figshare_import.run_data_upload:run_data_upload',
-            'testfigshareimport=figshare_import.test:main'
+            'fwcimport=fwc_import.run_data_upload:run_data_upload',
+            'testfwcimport=fwc_import.test:main'
         ],
     },
     python_requires='>=3.9, <4.0',

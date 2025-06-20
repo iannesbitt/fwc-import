@@ -1,7 +1,7 @@
 import unittest
-from figshare_import.conv import figshare_to_eml
+from fwc_import.conv import fwc_to_eml
 
-class TestFigshareToEML(unittest.TestCase):
+class TestFWCToEML(unittest.TestCase):
     def setUp(self):
         """
         Set up the test case with the test article.
@@ -10,10 +10,10 @@ class TestFigshareToEML(unittest.TestCase):
 
     def test_conversion_to_eml(self):
         """
-        Test the conversion of a figshare article to EML.
+        Test the conversion of a FWC article to EML.
         """
         # Perform the conversion
-        eml_result = figshare_to_eml(self.test_article)
+        eml_result = fwc_to_eml(self.test_article)
         # Verify the conversion
         self.assertIn('<eml:eml', eml_result)
         self.assertIn('<dataset>', eml_result)
