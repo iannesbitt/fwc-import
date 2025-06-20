@@ -112,9 +112,39 @@ A dictionary of file extensions and their corresponding MIME types.
 """
 
 GROUP_ID = {
+    1:	"Avian Research",
+    2:	"Fish and Wildlife Health",
+    3:	"Freshwater Fisheries Biology",
+    4:	"Habitat Research",
+    5:	"Harmful Algal Blooms Research",
+    6:	"Center for Spatial Analysis",
+    7:	"Keys Fisheries Research",
+    8:	"Marine Fisheries Biology",
+    10:	"Marine Fisheries Dependent Monitoring",
+    12:	"Marine Fisheries Independent Monitoring",
+    13:	"Marine Fisheries Stock Assessment",
+    14:	"Marine Fisheries Stock Enhancement Research",
+    15:	"Marine Mammal Research",
+    17:	"Terrestrial Mammal Research",
+    18:	"Marine Turtle Research",
+    19:	"Freshwater Resource Assessment ",
+    20:	"Reptiles and Amphibians Research",
+    24:	"Center for Biostatistics and Modeling",
+    25:	"Information Access",
+    26:	"Socioeconomic Assessment",
+    27:	"Aquatic Habitat Conservation Restoration",
+    28:	"Imperiled Species Management",
+    29:	"Species Conservation Planning",
+    30:	"Invasive Plant Management",
+    31:	"Conservation Planning Services",
+    32:	"Wildlife and Habitat Management",
+    33:	"Florida's Wildlife Legacy Initiative",
+    34:	"Public Access Services Office",
+    35:	"Wildlife Impact Management",
+    36:	"Wildlife Diversity Conservation (SCP and FWLI)",
 }
 """
-A dictionary of FWC group IDs and their corresponding departments/institutions.
+A dictionary of FWC subunit IDs.
 This will be moved to a configuration file.
 """
 
