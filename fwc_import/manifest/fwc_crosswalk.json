@@ -1,0 +1,15 @@
+{
+    "Title": "title",
+    "PrincipalInvestigator": "creator/individualName",
+    "SubunitID": "organizationName",
+    "PubDate": "pubDate",
+    "Description": "abstract",
+    "ProjectURL": ["distribution scope='document'/online/url function='information'",
+                   "alternateIdentifier"],
+    "StartDate": "coverage/temporalCoverage/rangeOfDates/beginDate/calendarDate",
+    "EndDate": "coverage/temporalCoverage/rangeOfDates/endDate/calendarDate",
+    "NorthBC": "coverage/spatialCoverage/boundingBox/northBoundingCoordinate",
+    "SouthBC": "coverage/spatialCoverage/boundingBox/southBoundingCoordinate",
+    "EastBC": "coverage/spatialCoverage/boundingBox/eastBoundingCoordinate",
+    "WestBC": "coverage/spatialCoverage/boundingBox/westBoundingCoordinate"
+}
