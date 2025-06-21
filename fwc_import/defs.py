@@ -127,7 +127,7 @@ GROUP_ID = {
     15:	"Marine Mammal Research",
     17:	"Terrestrial Mammal Research",
     18:	"Marine Turtle Research",
-    19:	"Freshwater Resource Assessment ",
+    19:	"Freshwater Resource Assessment",
     20:	"Reptiles and Amphibians Research",
     24:	"Center for Biostatistics and Modeling",
     25:	"Information Access",
