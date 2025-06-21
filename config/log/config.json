@@ -18,14 +18,14 @@
         "level": "WARNING",
         "formatter": "standard",
         "class": "logging.FileHandler",
-        "filename": "~/figshare-import/log/figshare-import.err",
+        "filename": "~/fwc-import/log/fwc-import.err",
         "mode": "a"
       },
       "debugfile": {
         "level": "DEBUG",
         "formatter": "standard",
         "class": "logging.handlers.RotatingFileHandler",
-        "filename": "~/figshare-import/log/figshare-import.log",
+        "filename": "~/fwc-import/log/fwc-import.log",
         "mode": "a",
         "maxBytes": 52428800,
         "backupCount": 10
