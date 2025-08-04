@@ -1,213 +1,134 @@
-from logging import getLogger
-import d1_client.mnclient as mn
-from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
-from html2text import html2text
+import os
+import json
+import pandas as pd
+import xml.etree.ElementTree as ET
+import xml.dom.minidom
+import re
 
-from .utils import parse_name, get_lat_lon, get_article_list, write_article, fix_datetime
-from .defs import GROUP_ID
+CROSSWALK_FILE = './fwc_import/manifest/fwc_crosswalk.json'
+SHEETS_DIR = './fwc_import/manifest/meta'
+OUTPUT_DIR = './output_eml'
+
+SUBUNIT = {
+    1:	"Avian Research",
+    2:	"Fish and Wildlife Health",
+    3:	"Freshwater Fisheries Biology",
+    4:	"Habitat Research",
+    5:	"Harmful Algal Blooms Research",
+    6:	"Center for Spatial Analysis",
+    7:	"Keys Fisheries Research",
+    8:	"Marine Fisheries Biology",
+    10:	"Marine Fisheries Dependent Monitoring",
+    12:	"Marine Fisheries Independent Monitoring",
+    13:	"Marine Fisheries Stock Assessment",
+    14:	"Marine Fisheries Stock Enhancement Research",
+    15:	"Marine Mammal Research",
+    17:	"Terrestrial Mammal Research",
+    18:	"Marine Turtle Research",
+    19:	"Freshwater Resource Assessment",
+    20:	"Reptiles and Amphibians Research",
+    24:	"Center for Biostatistics and Modeling",
+    25:	"Information Access",
+    26:	"Socioeconomic Assessment",
+    27:	"Aquatic Habitat Conservation Restoration",
+    28:	"Imperiled Species Management",
+    29:	"Species Conservation Planning",
+    30:	"Invasive Plant Management",
+    31:	"Conservation Planning Services",
+    32:	"Wildlife and Habitat Management",
+    33:	"Florida's Wildlife Legacy Initiative",
+    34:	"Public Access Services Office",
+    35:	"Wildlife Impact Management",
+    36:	"Wildlife Diversity Conservation (SCP and FWLI)",
+}
+"""
+A dictionary of FWC subunit IDs.
+"""
 
 
-def fwc_to_eml(meta: dict):
+def hyphenate(text):
+    # Lowercase, replace spaces and non-alphanum with hyphens
+    return re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')
+
+def parse_segment(segment):
     """
-    Construct a minimal EML document from a FWC record.
-    This function will extract author information and parse it into first and
-    last names. It will also extract the publication date, abstract, keywords,
-    license, and file information from the FWC record. Additionally, it
-    will attempt to extract spatial coverage information from the description
-    field using a set of regular expressions.
-
-    Since the FWC metadata does not provide author contact information,
-    the first author is used as the contact person in the EML document. Author
-    ORCID IDs are included in the creator element and the dataset contact if
-    they are present in the author list.
-
-    The types of location strings that are supported by the
-    :func:`utils.get_lat_lon` function are as follows:
-    
-    1. Decimal degrees: ``8.994410°, -79.543000°``
-    2. Decimal degrees with direction: ``8.910718°N, -79.528919°``
-    3. Degrees and decimal minutes with direction: ``7° 38.422'N, 81° 42.079'W``
-    4. Degrees, minutes, and seconds with direction: ``9°9'42.36"N, 79°50'15.67"W``
-    5. Degrees and minutes with direction (special format): ``0°41′ S latitude, 76°24′ W longitude``
-    6. Degrees and decimal minutes with direction (alternative format): ``8° 38.743'N    79° 2.887'W``
-    7. Location prefix with decimal degrees: ``Location: 7.69633 -81.61603``
-    
-
-    :param meta: The article metadata.
-    :type meta: dict
-    :return: The EML-formatted string.
-    :rtype: str
+    Parse a segment like "userId directory='https://orcid.org'" into
+    ('userId', {'directory': 'https://orcid.org'})
     """
-    L = getLogger(__name__)
-    L.info('Generating EML...')
-    # Create the root element
-    eml = Element('eml:eml', attrib={
-        'xmlns:eml': 'https://eml.ecoinformatics.org/eml-2.2.0',
-        'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-        'xsi:schemaLocation': 'https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd',
-        'packageId': f"doi:{meta['doi']}",
-        'system': 'https://si.edu',
-    })
-    # Create the dataset element
-    dataset = SubElement(eml, 'dataset')
-    # Create the alternateIdentifier element using the dataset DOI
-    id = SubElement(dataset, 'alternateIdentifier')
-    id.text = meta['figshare_url']
-    # Create the title element
-    title = SubElement(dataset, 'title')
-    title.text = meta['title']
-    # Create the creator element(s) from the author list
-    L.info(f"Found {len(meta['authors'])} authors")
-    for author in meta['authors']:
-        creator = SubElement(dataset, 'creator')
-        individualName = SubElement(creator, 'individualName')
-        givenName = SubElement(individualName, 'givenName')
-        author['givenName'], author['surName'] = parse_name(author['full_name'])
-        givenName.text = author["givenName"]
-        surName = SubElement(individualName, 'surName')
-        surName.text = author["surName"]
-        if ('orcid_id' in author) and (author['orcid_id'] != ''):
-            userId = SubElement(creator, 'userId', directory='https://orcid.org')
-            userId.text = author['orcid_id']
-        L.info(f'Added author: {author["givenName"]} {author["surName"]}')
-    # Create the pubDate element using the metadata published date
-    pubDate = SubElement(dataset, 'pubDate')
-    pubDate.text = fix_datetime(meta['published_date'])
-    # Create the abstract element using the metadata description
-    abstract = SubElement(dataset, 'abstract')
-    try:
-        abs_text = html2text(meta['description'])
-        markdown = SubElement(abstract, 'markdown')
-        markdown.text = abs_text
-    except Exception as e:
-        L.error(f'Error converting HTML to text: {repr(e)}')
-        para = SubElement(abstract, 'para')
-        para.text = meta['description']
-    # Create the keywordSet element and keyword(s) using the metadata tags list
-    L.info(f"Found {len(meta['tags'])} keyword tags in the article")
-    keywordSet = SubElement(dataset, 'keywordSet')
-    for keyword in meta['tags']:
-        keyword_element = SubElement(keywordSet, 'keyword')
-        keyword_element.text = keyword
-    # Add additionalInfo stating that this document was imported from metadata
-    additionalInfo = SubElement(dataset, 'additionalInfo')
-    para = SubElement(additionalInfo, 'para')
-    para.text = """This metadata record was imported using an automated process.
-    The original metadata used for creating this record is preserved as a JSON file in this data package.
-    Errors should be reported to the repository administrator."""
-    # Create the intellectualRights element using the license name and URL
-    intellectualRights = SubElement(dataset, 'intellectualRights')
-    para = SubElement(intellectualRights, 'para')
-    para.text = f"{meta['license']['name']} ({meta['license']['url']})"
-    # add coverage elements
-    coverage = None
-    # Create the geographic coverage element(s) using the spatial coverage derived from the metadata description
-    latlon_pairs = get_lat_lon(meta['description'])
-    if latlon_pairs:
-        L.info(f'Found {len(latlon_pairs)} geographic coverage value(s) in article description')
-        coverage = SubElement(dataset, 'coverage')
-        for latlon in latlon_pairs:
-            if (latlon.lat > 90) or (latlon.lat < -90) or (latlon.lon > 180) or (latlon.lon < -180):
-                L.warning(f'Invalid latitude/longitude pair: {latlon.lat}, {latlon.lon}')
-                continue
-            # Create a geographicCoverage element for each lat/lon pair
-            geographicCoverage = SubElement(coverage, 'geographicCoverage')
-            geographicDescription = SubElement(geographicCoverage, 'geographicDescription')
-            geographicDescription.text = 'Bounding coordinate derived from article description'
-            boundingCoordinates = SubElement(geographicCoverage, 'boundingCoordinates')
-            # West
-            westBoundingCoordinate = SubElement(boundingCoordinates, 'westBoundingCoordinate')
-            westBoundingCoordinate.text = str(latlon.lon)
-            # East
-            eastBoundingCoordinate = SubElement(boundingCoordinates, 'eastBoundingCoordinate')
-            eastBoundingCoordinate.text = str(latlon.lon)
-            # North
-            northBoundingCoordinate = SubElement(boundingCoordinates, 'northBoundingCoordinate')
-            northBoundingCoordinate.text = str(latlon.lat)
-            # South
-            southBoundingCoordinate = SubElement(boundingCoordinates, 'southBoundingCoordinate')
-            southBoundingCoordinate.text = str(latlon.lat)
-    if False:
-        # not yet implemented
-        if not coverage:
-            coverage = SubElement(dataset, 'coverage')
-        temporalCoverage = SubElement(coverage, 'temporalCoverage')
-    # Create the contact element using the first author's givenName and surName
-    contact = SubElement(dataset, 'contact')
-    individualName = SubElement(contact, 'individualName')
-    givenName = SubElement(individualName, 'givenName')
-    givenName.text = meta['authors'][0]['givenName']
-    surName = SubElement(individualName, 'surName')
-    surName.text = meta['authors'][0]['surName']
-    if ('orcid_id' in meta['authors'][0]) and (meta['authors'][0]['orcid_id'] != ''):
-        userId = SubElement(contact, 'userId', directory='https://orcid.org')
-        userId.text = meta['authors'][0]['orcid_id']
-    # Create the publisher element using the group ID mapping
-    publisher = SubElement(dataset, 'publisher')
-    organization = SubElement(publisher, 'organizationName')
-    organization.text = GROUP_ID[meta.get('group_id', 23417)]
-    # Create the entity element(s) using the files list
-    L.debug(f"meta['files'] before EML serialization: {meta.get('files')}")
-    L.info(f"Found {len(meta['files'])} file(s) in the article")
-    for file in meta['files']:
-        if False:
-            # not yet implemented
-            file_extensions = ['.shp', '.geojson', '.kml', '.gpx']
-            if any(ext in file['name'] for ext in file_extensions):
-                etype = 'spatialVector'
-            file_extensions = ['.tif', '.tiff', '.geotiff']
-            if any(ext in file['name'] for ext in file_extensions):
-                etype = 'spatialRaster'
-            file_extensions = ['.csv', '.txt', '.xls', '.xlsx', '.tsv']
-            if any(ext in file['name'] for ext in file_extensions):
-                etype = 'dataTable'
-        else:
-            etype = 'otherEntity'
-        if file.get('pid'):
-            entity = SubElement(dataset, etype, id=file['pid'])
-            entityName = SubElement(entity, 'entityName')
-            entityName.text = file['name']
-            if etype == 'otherEntity':
-                entityType = SubElement(entity, 'entityType')
-                entityType.text = file['mimetype']
-            else:
-                entityAdditionalInfo = SubElement(entity, 'additionalInfo')
-                para = SubElement(entityAdditionalInfo, 'para')
-                para.text = f"File type: {file['mimetype']}"
-        else:
-            L.warning(f'No pid found for file {file["name"]} during EML creation')
-    L.info('EML generation complete')
-    return tostring(eml, encoding='unicode')
+    tag_match = re.match(r"^\s*([^\s]+)", segment)
+    tag = tag_match.group(1) if tag_match else segment.strip()
+    attrs = dict(re.findall(r"([a-zA-Z0-9_:-]+)\s*=\s*'([^']*)'", segment))
+    return tag, attrs
 
-
-def process_articles(articles: dict):
+def ensure_path(root, path):
     """
-    This function performs three actions:
-
-    1. Writes the original metadata to files in JSON format.
-    2. Converts the metadata to EML-formatted strings.
-    3. Writes the EML to XML.
-    Archives metadata records by writing them to files in different formats.
-
-    :note:
-        This function is intended only to write metadatametadata articles to JSON and
-        convert them to EML/XML. It does not upload the EML to a DataONE
-        Member Node.
-
-    :param articles: The data containing articles.
-    :type articles: dict
-    :return: A list of processed articles in EML format.
-    :rtype: dict
+    Walks/creates nodes along path, applies attributes, returns the leaf node.
     """
-    L = getLogger(__name__)
-    articles = get_article_list(articles)
-    eml_list = []
-    i = 0
-    for article in articles:
-        L.debug(f'Starting record {i}')
-        write_article(article, fmt='json', doi=article.get('doi'), title=article.get('title'))
-        eml = fwc_to_eml(article)
-        write_article(eml, fmt='xml', doi=article.get('doi'), title=article.get('title'))
-        eml_list.append(eml)
-        i += 1
-    return eml_list
+    node = root
+    for segment in path:
+        tag, attrs = parse_segment(segment)
+        found = None
+        # Try to find an existing child with the same tag and attributes
+        for child in node.findall(tag):
+            if all(child.get(k) == v for k, v in attrs.items()):
+                found = child
+                break
+        if found is None:
+            found = ET.SubElement(node, tag, attrib=attrs)
+        node = found
+    return node
+
+def clean_xml_text(text):
+    # Remove invalid XML 1.0 characters
+    # See: https://stackoverflow.com/a/25920330/43839
+    RE_XML_ILLEGAL = (
+        u'([\u0000-\u0008\u000b\u000c\u000e-\u001f'
+        u'\ud800-\udfff'
+        u'\ufffe-\uffff])'
+    )
+    return re.sub(RE_XML_ILLEGAL, '', text)
+
+def build_eml(row, crosswalk):
+    EML_NS = 'https://eml.ecoinformatics.org/eml-2.2.0'
+    ET.register_namespace('eml', EML_NS)
+    eml_root = ET.Element(f'{{{EML_NS}}}eml')
+    for col, eml_path in crosswalk.items():
+        value = str(row.get(col, '')).replace(' 00:00:00', '')
+        if col == "SubunitID":
+            value = SUBUNIT.get(int(value), value)
+        if pd.isna(value) or str(value).strip().lower() in ('', 'nan', 'nat'):
+            continue
+        # Handle list of paths or single path
+        paths = eml_path if isinstance(eml_path, list) else [eml_path]
+        for path in paths:
+            path_parts = path.split('/')
+            leaf = ensure_path(eml_root, path_parts)
+            leaf.text = clean_xml_text(value)
+    return eml_root
+
+def write_pretty_xml(element, filename):
+    rough_string = ET.tostring(element, encoding='utf-8')
+    reparsed = xml.dom.minidom.parseString(rough_string)
+    pretty_xml = reparsed.toprettyxml(indent="  ", encoding='utf-8')
+    with open(filename, 'wb') as f:
+        f.write(pretty_xml)
+
+def main():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    with open(CROSSWALK_FILE) as f:
+        crosswalk = json.load(f)
+
+    for fname in os.listdir(SHEETS_DIR):
+        if (('records_to' in fname) and fname.endswith('.xlsx')):
+            df = pd.read_excel(os.path.join(SHEETS_DIR, fname), dtype=str)
+            for _, row in df.iterrows():
+                eml_tree = build_eml(row, crosswalk)
+                # Use title or fallback as filename
+                title_col = next((c for c in crosswalk if 'title' in c.lower()), None)
+                title = row.get(title_col, 'untitled') if title_col else 'untitled'
+                filename = hyphenate(str(title)) + '.xml'
+                write_pretty_xml(eml_tree, os.path.join(OUTPUT_DIR, filename))
+
+
+if __name__ == '__main__':
+    main()
