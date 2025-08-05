@@ -102,18 +102,18 @@ def clean_xml_text(text):
     )
     return re.sub(RE_XML_ILLEGAL, '', text)
 
-def add_metadata_provider(parent):
-    def sub(elem, tag, text):
-        t = ET.SubElement(elem, tag)
+def add_contact(parent):
+    def sub(elem, tag, text, attrib=None):
+        t = ET.SubElement(elem, tag, attrib=attrib or {})
         t.text = text
         return t
 
-    mp_elem = ET.SubElement(parent, f'metadataProvider')
+    mp_elem = ET.SubElement(parent, f'contact')
     sub(mp_elem, f'organizationName', metadataProvider["organizationName"])
     addr_elem = ET.SubElement(mp_elem, f'address')
     for k in ["deliveryPoint", "city", "administrativeArea", "postalCode", "country"]:
         sub(addr_elem, f'{k}', metadataProvider["address"][k])
-    sub(mp_elem, f'phone', metadataProvider["phone"])
+    sub(mp_elem, f'phone', metadataProvider["phone"], attrib={"phonetype": "voice"})
     sub(mp_elem, f'electronicMailAddress', metadataProvider["electronicMailAddress"])
     sub(mp_elem, f'onlineUrl', metadataProvider["onlineUrl"])
 
@@ -130,21 +130,36 @@ def build_eml(row, crosswalk):
         {
             'xmlns:xsi': XSI_NS,
             'xmlns:stmml': STMML_NS,
+            'system': 'knb'
         }
     )
     dataset_elem = ET.SubElement(eml_root, f'dataset')
-    add_metadata_provider(dataset_elem)
     for col, eml_path in crosswalk.items():
         value = str(row.get(col, '')).replace(' 00:00:00', '')
         if col == "SubunitID":
             value = SUBUNIT.get(int(value), value)
+        if col.lower() == "studyarea":
+            value = "No description provided" if pd.isna(value) or str(value).strip().lower() in ('', 'nan', 'nat') else value
+        if col.lower() == "principalinvestigator":
+            # split name into givenName and surName
+            if pd.notna(value) and str(value).strip().lower() not in ("", "nan", "nat"):
+                names = value.split(' ')
+                if len(names) == 2:
+                    given_name, sur_name = names[0].strip(), names[1].strip()
+                else:
+                    given_name, sur_name = ' '.join(names[0:]).strip(), names[1].strip()
+                creator_elem = ET.SubElement(dataset_elem, "creator")
+                name_elem = ET.SubElement(creator_elem, "individualName")
+                ET.SubElement(name_elem, "givenName").text = clean_xml_text(given_name)
+                ET.SubElement(name_elem, "surName").text = clean_xml_text(sur_name)
+            continue
         if pd.isna(value) or str(value).strip().lower() in ('', 'nan', 'nat'):
             continue
         # Handle list of paths or single path
         paths = eml_path if isinstance(eml_path, list) else [eml_path]
         for path in paths:
             path_parts = path.split('/')
-            if (col.lower() == "description") or (col.lower() == "description") or (isinstance(eml_path, str) and "abstract" in eml_path):
+            if (col.lower() == "description") or (isinstance(eml_path, str) and "abstract" in eml_path):
                 leaf = ensure_path(eml_root, path_parts)
                 # Remove any existing text
                 leaf.text = None
@@ -154,15 +169,18 @@ def build_eml(row, crosswalk):
             else:
                 leaf = ensure_path(eml_root, path_parts)
                 leaf.text = clean_xml_text(value)
-        # Special handling for DatasetID
-        if col in ["DatasetID", "ProjectID"]:
-            if pd.notna(value) and str(value).strip().lower() not in ("", "nan", "nat"):
-                annotation = ET.SubElement(dataset_elem, "annotation")
-                prop_uri = ET.SubElement(annotation, "propertyURI", label="sameAs")
-                prop_uri.text = "http://www.w3.org/2002/07/owl#sameAs"
-                label = "FWC Dataset ID" if col == "DatasetID" else "FWC Project ID"
-                value_uri = ET.SubElement(annotation, "valueURI", label=label)
-                value_uri.text = f"{label}: {str(value).strip()}"
+    add_contact(dataset_elem)
+    # Special handling for DatasetID
+    additionalInfo = ET.SubElement(dataset_elem, "additionalInfo")
+    for dataset_col in ["DatasetID", "ProjectID", "SpatialResolution"]:
+        title = dataset_col if "ID" in dataset_col else "Additional Information (FWC 'SpatialResolution' field)"
+        value = row.get(dataset_col, "")
+        if pd.notna(value) and str(value).strip().lower() not in ("", "nan", "nat"):
+            title_elem = ET.SubElement(additionalInfo, "para")
+            title_elem.text = f"{title}:"
+            for para in filter(None, re.split(r'\r\n|\r|\n', value)):
+                para_elem = ET.SubElement(additionalInfo, "para")
+                para_elem.text = clean_xml_text(para)
     # Special handling for urls/alt identifiers
     for url_col in ["DatasetURL", "ProjectURL"]:
         url = row.get(url_col, "")
@@ -173,13 +191,8 @@ def build_eml(row, crosswalk):
             value_uri = ET.SubElement(annotation, "valueURI", label=str(url).strip())
             value_uri.text = str(url).strip()
     # Special handling for process fields
-    process_fields = [
-        "Completeness",
-        "LogicalConsistencyRpt",
-    ]
-    # Path for all process fields
     method_step_elem = ET.SubElement(dataset_elem, "methods")
-    for field in process_fields:
+    for field in ["Completeness", "LogicalConsistencyRpt"]:
         value = row.get(field, '')
         if pd.isna(value) or str(value).strip().lower() in ('', 'nan', 'nat'):
             continue
