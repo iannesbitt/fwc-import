@@ -154,6 +154,16 @@ def build_eml(row, crosswalk):
             else:
                 leaf = ensure_path(eml_root, path_parts)
                 leaf.text = clean_xml_text(value)
+        # Special handling for DatasetID
+        if col in ["DatasetID", "ProjectID"]:
+            if pd.notna(value) and str(value).strip().lower() not in ("", "nan", "nat"):
+                annotation = ET.SubElement(dataset_elem, "annotation")
+                prop_uri = ET.SubElement(annotation, "propertyURI", label="sameAs")
+                prop_uri.text = "http://www.w3.org/2002/07/owl#sameAs"
+                label = "FWC Dataset ID" if col == "DatasetID" else "FWC Project ID"
+                value_uri = ET.SubElement(annotation, "valueURI", label=label)
+                value_uri.text = f"{label}: {str(value).strip()}"
+    # Special handling for urls/alt identifiers
     for url_col in ["DatasetURL", "ProjectURL"]:
         url = row.get(url_col, "")
         if pd.notna(url) and str(url).strip().lower() not in ("", "nan", "nat"):
@@ -162,6 +172,23 @@ def build_eml(row, crosswalk):
             prop_uri.text = "http://www.w3.org/2002/07/owl#sameAs"
             value_uri = ET.SubElement(annotation, "valueURI", label=str(url).strip())
             value_uri.text = str(url).strip()
+    # Special handling for process fields
+    process_fields = [
+        "Completeness",
+        "LogicalConsistencyRpt",
+    ]
+    # Path for all process fields
+    method_step_elem = ET.SubElement(dataset_elem, "methods")
+    for field in process_fields:
+        value = row.get(field, '')
+        if pd.isna(value) or str(value).strip().lower() in ('', 'nan', 'nat'):
+            continue
+        method_step = ET.SubElement(method_step_elem, "methodStep")
+        desc_elem = ET.SubElement(method_step, "description")
+        title_elem = ET.SubElement(desc_elem, "title")
+        title_elem.text = field
+        para_elem = ET.SubElement(desc_elem, "para")
+        para_elem.text = clean_xml_text(str(value))
     return eml_root
 
 def write_pretty_xml(element, filename):

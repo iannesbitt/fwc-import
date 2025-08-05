@@ -12,10 +12,8 @@
     "Contact": "dataset/metadataProvider/electronicMailAddress",
     "PubDate": "dataset/pubDate",
     "Description": "dataset/abstract",
-    "ProjectURL": ["dataset/distribution scope='document'/online/url function='information'",
-                   "dataset/annotation/propertyURI label='sameAs'"],
-    "DatasetURL": ["dataset/distribution scope='dataset'/online/url function='download'",
-                   "dataset/annotation/propertyURI label='sameAs'"],
+    "ProjectURL": "dataset/distribution scope='document'/online/url function='information'",
+    "DatasetURL": "dataset/distribution scope='dataset'/online/url function='download'",
     "StartDate": "dataset/coverage/temporalCoverage/rangeOfDates/beginDate/calendarDate",
     "EndDate": "dataset/coverage/temporalCoverage/rangeOfDates/endDate/calendarDate",
     "StudyArea": "dataset/coverage/spatialCoverage/geographicDescription",
@@ -24,10 +22,5 @@
     "EastBC": "dataset/coverage/spatialCoverage/boundingCoordinates/eastBoundingCoordinate",
     "WestBC": "dataset/coverage/spatialCoverage/boundingCoordinates/westBoundingCoordinate",
     "genus": "dataset/coverage/taxonomicCoverage/taxonomicClassification/taxonRankValue",
-    "species": "dataset/coverage/taxonomicCoverage/taxonomicClassification/taxonRankValue",
-    "ProcessStepID": "dataset/methods/methodStep/description/para",
-    "ProcessDate": "dataset/methods/methodStep/description/para",
-    "ProcessDescription": "dataset/methods/methodStep/description/para",
-    "SourceDescription": "dataset/methods/methodStep/description/para",
-    "DatasetID": "dataset/methods/methodStep/description/para"
+    "species": "dataset/coverage/taxonomicCoverage/taxonomicClassification/taxonRankValue"
 }
