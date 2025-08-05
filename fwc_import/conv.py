@@ -45,6 +45,20 @@ SUBUNIT = {
 A dictionary of FWC subunit IDs.
 """
 
+metadataProvider = {
+    "organizationName": "Florida Fish and Wildlife Conservation Commission",
+    "address": {
+        "deliveryPoint": "620 S. Meridian St.",
+        "city": "Tallahassee",
+        "administrativeArea": "FL",
+        "postalCode": "32399-1600",
+        "country": "USA"
+    },
+    "phone": "+1 (850) 488-4676",
+    "electronicMailAddress": "metadata@myfwc.com",
+    "onlineUrl": "https://myfwc.com",
+}
+
 
 def hyphenate(text):
     # Lowercase, replace spaces and non-alphanum with hyphens
@@ -88,10 +102,38 @@ def clean_xml_text(text):
     )
     return re.sub(RE_XML_ILLEGAL, '', text)
 
+def add_metadata_provider(parent):
+    def sub(elem, tag, text):
+        t = ET.SubElement(elem, tag)
+        t.text = text
+        return t
+
+    mp_elem = ET.SubElement(parent, f'metadataProvider')
+    sub(mp_elem, f'organizationName', metadataProvider["organizationName"])
+    addr_elem = ET.SubElement(mp_elem, f'address')
+    for k in ["deliveryPoint", "city", "administrativeArea", "postalCode", "country"]:
+        sub(addr_elem, f'{k}', metadataProvider["address"][k])
+    sub(mp_elem, f'phone', metadataProvider["phone"])
+    sub(mp_elem, f'electronicMailAddress', metadataProvider["electronicMailAddress"])
+    sub(mp_elem, f'onlineUrl', metadataProvider["onlineUrl"])
+
+
 def build_eml(row, crosswalk):
     EML_NS = 'https://eml.ecoinformatics.org/eml-2.2.0'
+    XSI_NS = 'http://www.w3.org/2001/XMLSchema-instance'
+    STMML_NS = 'http://www.xml-cml.org/schema/stmml-1.1'
     ET.register_namespace('eml', EML_NS)
-    eml_root = ET.Element(f'{{{EML_NS}}}eml')
+    ET.register_namespace('xsi', XSI_NS)
+    ET.register_namespace('stmml', STMML_NS)
+    eml_root = ET.Element(
+        f'{{{EML_NS}}}eml',
+        {
+            'xmlns:xsi': XSI_NS,
+            'xmlns:stmml': STMML_NS,
+        }
+    )
+    dataset_elem = ET.SubElement(eml_root, f'dataset')
+    add_metadata_provider(dataset_elem)
     for col, eml_path in crosswalk.items():
         value = str(row.get(col, '')).replace(' 00:00:00', '')
         if col == "SubunitID":
@@ -102,8 +144,24 @@ def build_eml(row, crosswalk):
         paths = eml_path if isinstance(eml_path, list) else [eml_path]
         for path in paths:
             path_parts = path.split('/')
-            leaf = ensure_path(eml_root, path_parts)
-            leaf.text = clean_xml_text(value)
+            if (col.lower() == "description") or (col.lower() == "description") or (isinstance(eml_path, str) and "abstract" in eml_path):
+                leaf = ensure_path(eml_root, path_parts)
+                # Remove any existing text
+                leaf.text = None
+                for para in filter(None, re.split(r'\r\n|\r|\n', value)):
+                    para_elem = ET.SubElement(leaf, "para")
+                    para_elem.text = clean_xml_text(para)
+            else:
+                leaf = ensure_path(eml_root, path_parts)
+                leaf.text = clean_xml_text(value)
+    for url_col in ["DatasetURL", "ProjectURL"]:
+        url = row.get(url_col, "")
+        if pd.notna(url) and str(url).strip().lower() not in ("", "nan", "nat"):
+            annotation = ET.SubElement(dataset_elem, "annotation")
+            prop_uri = ET.SubElement(annotation, "propertyURI", label="sameAs")
+            prop_uri.text = "http://www.w3.org/2002/07/owl#sameAs"
+            value_uri = ET.SubElement(annotation, "valueURI", label=str(url).strip())
+            value_uri.text = str(url).strip()
     return eml_root
 
 def write_pretty_xml(element, filename):
@@ -127,7 +185,11 @@ def main():
                 title_col = next((c for c in crosswalk if 'title' in c.lower()), None)
                 title = row.get(title_col, 'untitled') if title_col else 'untitled'
                 filename = hyphenate(str(title)) + '.xml'
-                write_pretty_xml(eml_tree, os.path.join(OUTPUT_DIR, filename))
+                try:
+                    write_pretty_xml(eml_tree, os.path.join(OUTPUT_DIR, filename))
+                except Exception as e:
+                    print(f"Error writing {filename}: {e}\n{ET.tostring(eml_tree, encoding='utf-8')}")
+                    exit(1)
 
 
 if __name__ == '__main__':
