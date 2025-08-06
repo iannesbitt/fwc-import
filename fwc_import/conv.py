@@ -45,6 +45,8 @@ SUBUNIT = {
 A dictionary of FWC subunit IDs.
 """
 
+ID_TABLE = set()
+
 metadataProvider = {
     "organizationName": "Florida Fish and Wildlife Conservation Commission",
     "address": {
@@ -59,6 +61,27 @@ metadataProvider = {
     "onlineUrl": "https://myfwc.com",
 }
 
+def add_unique_id(id):
+    """
+    Ensure the id is unique by incrementing the number after the last period if needed.
+    Example: "fwc-fwri.478.1", "fwc-fwri.478.2", etc.
+    """
+    if id not in ID_TABLE:
+        ID_TABLE.add(id)
+        return id
+    prefix, _, num = id.rpartition('.')
+    try:
+        num = int(num)
+    except ValueError:
+        # If no trailing number, start at 2
+        prefix = id
+        num = 1
+    while True:
+        num += 1
+        new_id = f"{prefix}.{num}"
+        if new_id not in ID_TABLE:
+            ID_TABLE.add(new_id)
+            return new_id
 
 def hyphenate(text):
     # Lowercase, replace spaces and non-alphanum with hyphens
@@ -118,7 +141,14 @@ def add_contact(parent):
     sub(mp_elem, f'onlineUrl', metadataProvider["onlineUrl"])
 
 
-def build_eml(row, crosswalk):
+def build_eml(row, crosswalk, fname):
+    source = "fwc-fwri" if 'fwri' in fname.lower() else "fwc-hsc"
+    id = row.get("DatasetID", "") or row.get("ProjectID", "")
+    if not id:
+        print(f"Warning: No DatasetID or ProjectID found in row: {row}")
+        id = f"{source}.no-id.1"
+    else:
+        id = f"{source}.{id.strip().replace(' ', '-').lower()}.1"
     EML_NS = 'https://eml.ecoinformatics.org/eml-2.2.0'
     XSI_NS = 'http://www.w3.org/2001/XMLSchema-instance'
     STMML_NS = 'http://www.xml-cml.org/schema/stmml-1.1'
@@ -130,6 +160,7 @@ def build_eml(row, crosswalk):
         {
             'xmlns:xsi': XSI_NS,
             'xmlns:stmml': STMML_NS,
+            'packageId': f"{id}",
             'system': 'knb'
         }
     )
@@ -177,7 +208,7 @@ def build_eml(row, crosswalk):
         value = row.get(dataset_col, "")
         if pd.notna(value) and str(value).strip().lower() not in ("", "nan", "nat"):
             title_elem = ET.SubElement(additionalInfo, "para")
-            title_elem.text = f"{title}:"
+            title_elem.text = f"Legacy {title}:"
             for para in filter(None, re.split(r'\r\n|\r|\n', value)):
                 para_elem = ET.SubElement(additionalInfo, "para")
                 para_elem.text = clean_xml_text(para)
@@ -202,7 +233,7 @@ def build_eml(row, crosswalk):
         title_elem.text = field
         para_elem = ET.SubElement(desc_elem, "para")
         para_elem.text = clean_xml_text(str(value))
-    return eml_root
+    return eml_root, id
 
 def write_pretty_xml(element, filename):
     rough_string = ET.tostring(element, encoding='utf-8')
@@ -220,16 +251,18 @@ def main():
         if (('records_to' in fname) and fname.endswith('.xlsx')):
             df = pd.read_excel(os.path.join(SHEETS_DIR, fname), dtype=str)
             for _, row in df.iterrows():
-                eml_tree = build_eml(row, crosswalk)
+                eml_tree, id = build_eml(row, crosswalk, fname)
                 # Use title or fallback as filename
                 title_col = next((c for c in crosswalk if 'title' in c.lower()), None)
                 title = row.get(title_col, 'untitled') if title_col else 'untitled'
-                filename = hyphenate(str(title)) + '.xml'
+                id = add_unique_id(id)
+                filename = f'{id}-{hyphenate(str(title)[0:118])}.xml'
                 try:
                     write_pretty_xml(eml_tree, os.path.join(OUTPUT_DIR, filename))
                 except Exception as e:
                     print(f"Error writing {filename}: {e}\n{ET.tostring(eml_tree, encoding='utf-8')}")
                     exit(1)
+    print(len(ID_TABLE), "EML files written to", OUTPUT_DIR)
 
 
 if __name__ == '__main__':
