@@ -469,15 +469,18 @@ def generate_access_policy():
     :rtype: dataoneTypes.accessPolicy
     """
     accessPolicy = dataoneTypes.accessPolicy()
-    accessRule = dataoneTypes.AccessRule()
-    accessRule.subject.append(const.SUBJECT_PUBLIC)
-    permission = dataoneTypes.Permission('read')
-    accessRule.permission.append(permission)
-    accessPolicy.append(accessRule)
-    accessRule = dataoneTypes.AccessRule()
     config = get_config()
+    if config.get('read_groups'):
+        for group in config.get('read_groups'):
+            accessRule = dataoneTypes.AccessRule()
+            readGroup = dataoneTypes.Subject(group)
+            accessRule.subject.append(readGroup)
+            permission = dataoneTypes.Permission('read')
+            accessRule.permission.append(permission)
+            accessPolicy.append(accessRule)
     if config.get('write_groups'):
         for group in config.get('write_groups'):
+            accessRule = dataoneTypes.AccessRule()
             writeGroup = dataoneTypes.Subject(group)
             accessRule.subject.append(writeGroup)
             permission = dataoneTypes.Permission('write')
@@ -485,6 +488,7 @@ def generate_access_policy():
             accessPolicy.append(accessRule)
     if config.get('changePermission_groups'):
         for group in config.get('changePermission_groups'):
+            accessRule = dataoneTypes.AccessRule()
             changePermissionGroup = dataoneTypes.Subject(group)
             accessRule.subject.append(changePermissionGroup)
             permission = dataoneTypes.Permission('changePermission')
