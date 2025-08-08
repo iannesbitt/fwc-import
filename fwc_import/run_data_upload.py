@@ -12,10 +12,9 @@ from logging import getLogger
 from copy import deepcopy
 
 from .defs import fmts, CN_URL, DATA_ROOT, WORK_LOC
-from .utils import get_article_list, load_uploads, save_uploads, \
-            write_article, get_token, get_config, create_client, \
-            get_doipath, generate_access_policy
-from .conv import fwc_to_eml
+from .utils import load_uploads, save_uploads, \
+            get_token, get_config, create_client, \
+            generate_access_policy
 
 rpt_txt = """
 Package creation report:
@@ -168,77 +167,6 @@ def get_filepaths(files: list, doidir: Path):
     return paths
 
 
-def upload_files(orcid: str, doi: str, files: list[Path], client: MemberNodeClient_2_0):
-    """
-    Upload the files to the Member Node.
-
-    :param str orcid: The ORCID of the uploader.
-    :param str doi: The DOI of the article.
-    :param list files: The list of files to upload.
-    :param client: The Member Node client.
-    :type client: MemberNodeClient_2_0
-    :return: A dictionary of checksums and file information.
-    :rtype: dict
-    """
-    L = getLogger(__name__)
-    global CN_URL
-    sep = '' if CN_URL.endswith('/') else '/'
-    data_pids = None
-    sm_dict = {}
-    # get the path to the data directory
-    doidir = get_doipath(doi)
-    # get the paths to the files
-    files = get_filepaths(doidir=doidir, files=files)
-    flen = len(files)
-    if flen == 0:
-        raise FileNotFoundError(f'{doi} No files found for this version chain!')
-    # keep track of data pids for resource mapping
-    data_pids = []
-    i = 0
-    for f in files:
-        i += 1
-        try:
-            # get the format of the file
-            fformat = get_format(f)
-            data_pid = f"urn:uuid:{str(uuid.uuid4())}"
-            L.debug(f'{doi} Reading {f.name} ({fformat})')
-            data_bytes = f.read_bytes()
-            L.debug(f'{doi} Generating sysmeta for {f.name}')
-            data_sm, md5, size = generate_system_metadata(pid=data_pid,
-                                                        sid=doi,
-                                                        format_id=fformat,
-                                                        science_object=data_bytes,
-                                                        orcid=orcid)
-            L.info(f'{doi} ({i}/{flen}) Uploading {f.name} ({round(size/(1024*1024), 1)} MB)')
-            dmd = client.create(data_pid, data_bytes, data_sm)
-            if isinstance(dmd, dataoneTypes.Identifier):
-                # if the response is an identifier, the upload was successful
-                try:
-                    L.info(f'{doi} Received response for science object upload: {dmd.value()}')
-                except Exception as e:
-                    L.error(f'{doi} Received <d1_common.types.generated.dataoneTypes_v1.Identifier> but could not print value: {repr(e)}')
-                # add the data pid to the list of data pids
-                data_pids.append(data_pid)
-                sm_dict[md5] = {
-                    'filename': f.name,
-                    'size': size,
-                    'doi': doi,
-                    'identifier': data_pid,
-                    'formatId': fformat,
-                    'url': f"{CN_URL}{sep}v2/resolve/{data_pid}",
-                }
-            else:
-                L.error(f'{doi} Unexpected response type: {type(dmd)}')
-                try:
-                    L.debug(f'{doi} Received response:\n{dmd.value()}')
-                except Exception as e:
-                    L.error(f'{doi} Could not print response: {repr(e)}')
-        except Exception as e:
-            L.error(f'{doi} upload failed ({e})')
-            raise BaseException(e)
-    return sm_dict
-
-
 def upload_eml(orcid: str, doi: str, eml: str, client: MemberNodeClient_2_0):
     """
     Upload the EML to the Member Node.
@@ -355,20 +283,21 @@ def report(succ: int, fail: int, finished_dois: list, failed_dois: list):
     L.info(rpt_txt % (fail, succ, failed_str, finished_str))
 
 
-def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, node: str):
+def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberNodeClient_2_0, node: str):
     """
-    Package creation and upload loop. This function will create packages and
-    upload them to the Member Node.
+    Upload only metadata (EML) and data packages (resource maps) for each EML file in the given folder, using packageId as the identifier.
 
-    :param list articles: The list of articles to upload.
-    :param str orcid: The ORCID of the uploader.
+    :param eml_folder: Path to the folder containing EML files.
+    :param orcid: The ORCID of the uploader.
     :param client: The Member Node client.
-    :type client: MemberNodeClient_2_0
-    :param str node: The node identifier.
+    :param node: The node identifier.
     """
+    import xml.etree.ElementTree as ET
     L = getLogger(__name__)
     sep = '' if CN_URL.endswith('/') else '/'
-    n = len(articles)
+    eml_dir = Path(eml_folder)
+    eml_files = sorted(list(eml_dir.glob('*.xml')))
+    n = len(eml_files)
     i = 0
     er = 0
     succ_list = []
@@ -379,149 +308,85 @@ def upload_manager(articles: list, orcid: str, client: MemberNodeClient_2_0, nod
     except FileNotFoundError:
         uploads = {}
     try:
-        for article in articles:
+        for eml_path in eml_files:
             old_eml_pid, old_resource_map_pid = None, None
             i += 1
-            L.debug(f'Article:\n{article}')
-            doi = article.get('doi')
-            title = article.get('title')
-            L.info(f'({i}/{n}) Working on {doi}')
-            # write the original metadata to file and keep track of its attributes
-            af = write_article(article=article, doi=doi, title='original_metadata', fmt='json')
-            files = article.get('files')
-            files.append({
-                'name': f'original_metadata.json',
-                'computed_md5': hashlib.md5(af.read_bytes()).hexdigest(),
-                'mimetype': 'application/json',
-            })
-            # check if the article has already been uploaded
-            ulist = deepcopy(files)
-            if not (uploads.get(doi)):
-                uploads[doi] = {}
-            else:
-                prev_upls = 0
-                for uf in uploads.get(doi):
-                    L.debug(f'Already uploaded file: {uploads[doi][uf]}')
-                    for f in files:
-                        # if the file is already uploaded and its md5 matches the current file
-                        # add the pid and url to the files object for inclusion in the resource map
-                        if f.get('computed_md5') in uploads[doi]:
-                            f['d1_url'] = uploads[doi][f.get('computed_md5')]['url']
-                            f['pid'] = uploads[doi][f.get('computed_md5')]['identifier']
-                        else:
-                            # otherwise, add the file to the list of files related to the article
-                            files.append({
-                                'pid': uploads[doi][uf]['identifier'],
-                                'name': uploads[doi][uf]['filename'],
-                                'computed_md5': uf,
-                                'd1_url': uploads[doi][uf]['url'],
-                                'size': uploads[doi][uf]['size'],
-                                'mimetype': uploads[doi][uf]['formatId'],
-                            })
-                    fn = 0
-                    for f in ulist:
-                        # if the file is already uploaded, remove it from the list of files to upload
-                        if uploads[doi][uf]['filename'] == f['name']:
-                            prev_upls += 1
-                            del ulist[fn]
-                        fn += 1
-                L.info(f'Found {prev_upls} files that were already uploaded associated with {doi}')
             try:
-                if len(ulist) > 0:
-                    # Upload the data files to the Member Node if there are any in the ulist
-                    sm_dict = upload_files(orcid, doi, ulist, client)
-                    L.info(f'{doi} done. Uploaded {len(sm_dict)} files.')
-                    for fi in sm_dict:
-                        # add the uploaded files to the uploads dictionary
-                        uploads[doi][fi] = sm_dict[fi]
-                        for f in files:
-                            # add the dataone url to the files object for inclusion in the resource map
-                            if (f['name'] == sm_dict[fi]['filename']) and (f['computed_md5'] == fi):
-                                f['d1_url'] = sm_dict[fi]['url']
-                                f['pid'] = sm_dict[fi]['identifier']
-                    save_uploads(uploads, fp=uploads_loc)
+                eml_string = eml_path.read_text(encoding='utf-8')
+                # Parse packageId from EML header
+                root = ET.fromstring(eml_string)
+                package_id = root.attrib.get('packageId')
+                if not package_id:
+                    L.error(f'No packageId found in {eml_path.name}, skipping.')
+                    er += 1
+                    err_list.append(eml_path.name)
+                    continue
+                L.info(f'({i}/{n}) Working on {package_id} from {eml_path.name}')
+                # Use packageId as the identifier
+                if uploads.get(package_id) and uploads[package_id].get('eml'):
+                    old_eml_pid = uploads[package_id]['eml']['identifier']
+                    L.info(f'{package_id} Found previous EML: {old_eml_pid}')
                 else:
-                    L.info(f'No data files to upload for {doi}')
-                # Convert the article to EML
-                eml_string = fwc_to_eml(article)
-                # Write the EML to file
-                eml_fn = write_article(article=eml_string, doi=doi, title=title, fmt='xml')
-                # Upload the EML to the Member Node
-                if uploads[doi].get('eml'):
-                    old_eml_pid = uploads[doi]['eml']['identifier']
-                    L.info(f'{doi} Found previous EML: {old_eml_pid}')
-                eml_pid, eml_md5, eml_size = upload_eml(orcid, doi, eml_string, client)
+                    if not uploads.get(package_id):
+                        uploads[package_id] = {}
+                eml_pid, eml_md5, eml_size = upload_eml(orcid, package_id, eml_string, client)
                 if old_eml_pid:
-                    L.info(f'{doi} Adding obsoletedBy to old EML sysmeta object: {uploads[doi]["eml"]["identifier"]}')
-                    # Update old sysmeta with obsoletedBy
+                    L.info(f'{package_id} Adding obsoletedBy to old EML sysmeta object: {old_eml_pid}')
                     sysmeta_obsolete_updates(client, old_eml_pid, eml_pid)
                 if eml_pid:
-                    uploads[doi]['eml'] = {
-                        'filename': f"{eml_fn.name}",
+                    uploads[package_id]['eml'] = {
+                        'filename': eml_path.name,
                         'size': eml_size,
-                        'doi': doi,
+                        'doi': package_id,
                         'identifier': eml_pid,
                         'md5': eml_md5,
                         'formatId': "https://eml.ecoinformatics.org/eml-2.2.0",
                         'url': f"{CN_URL}{sep}v2/resolve/{eml_pid}",
                     }
                     save_uploads(uploads, fp=uploads_loc)
-                    # Generate the DataONE resource map
+                    # Generate the DataONE resource map (with only the EML PID)
                     pid_list = [eml_pid]
-                    for f in files:
-                        # add the data pids to the list of pids for the resource map
-                        if f.get('pid'):
-                            pid_list.append(f.get('pid'))
-                        else:
-                            L.warning(f'{doi} No pid key found for {f["name"]}')
-                            if f.get('computed_md5') in sm_dict:
-                                pid_list.append(sm_dict[f['computed_md5']]['identifier'])
-                            else:
-                                L.error(f'{doi} No PID found for {f["name"]}')
                     resource_map = generate_resource_map(eml_pid=eml_pid, data_pids=pid_list)
-                    if uploads[doi].get('resource_map'):
-                        old_resource_map_pid = uploads[doi]['resource_map']['identifier']
-                        L.info(f'{doi} Found previous resource map: {old_resource_map_pid}')
-                    # Upload the resource map to the Member Node
+                    if uploads[package_id].get('resource_map'):
+                        old_resource_map_pid = uploads[package_id]['resource_map']['identifier']
+                        L.info(f'{package_id} Found previous resource map: {old_resource_map_pid}')
                     resource_map_pid, resource_map_md5, resource_map_size = upload_resource_map(
-                        doi=doi,
+                        doi=package_id,
                         resource_map=resource_map,
                         client=client,
                         orcid=orcid,
                     )
                     if old_resource_map_pid:
-                        L.info(f'{doi} Adding obsoletedBy to old resource map sysmeta object: {old_resource_map_pid}')
+                        L.info(f'{package_id} Adding obsoletedBy to old resource map sysmeta object: {old_resource_map_pid}')
                         sysmeta_obsolete_updates(client, old_pid=old_resource_map_pid, new_pid=resource_map.getResourceMapPid())
-                    # Put the resource map info in the uploads dictionary
                     if resource_map_pid:
-                        uploads[doi]['resource_map'] = {
+                        uploads[package_id]['resource_map'] = {
                             'filename': 'resource_map.xml',
                             'size': resource_map_size,
-                            'doi': doi,
+                            'doi': package_id,
                             'identifier': resource_map_pid,
                             'md5': resource_map_md5,
                             'formatId': "http://www.openarchives.org/ore/terms",
                             'url': f"{CN_URL}{sep}v2/resolve/{resource_map_pid}",
                         }
                         save_uploads(uploads, fp=uploads_loc)
-                        L.info(f'{doi} Resource map uploaded successfully: {resource_map_pid}')
+                        L.info(f'{package_id} Resource map uploaded successfully: {resource_map_pid}')
                     else:
-                        uploads[doi]['resource_map'] = None
-                        raise exceptions.DataONEException(f'{doi} Resource map upload failed')
+                        uploads[package_id]['resource_map'] = None
+                        raise exceptions.DataONEException(f'{package_id} Resource map upload failed')
                 else:
-                    uploads[doi]['eml'] = None
-                    raise exceptions.DataONEException(f'{doi} EML upload failed')
-                succ_list.append(doi)
+                    uploads[package_id]['eml'] = None
+                    raise exceptions.DataONEException(f'{package_id} EML upload failed')
+                succ_list.append(package_id)
             except Exception as e:
                 er += 1
-                err_list.append(doi)
-                L.error(f'{doi} / {repr(e)}')
+                err_list.append(str(eml_path))
+                L.error(f'{eml_path} / {repr(e)}')
     except KeyboardInterrupt:
         L.info('Caught KeyboardInterrupt; generating report...')
     finally:
         save_uploads(uploads, fp=uploads_loc)
         report(succ=i-er, fail=er, finished_dois=succ_list, failed_dois=err_list)
-
 
 def run_data_upload():
     """
@@ -535,15 +400,14 @@ def run_data_upload():
     orcid = config.get('rightsholder_orcid')
     node = config.get('nodeid')
     mn_url = config.get('mnurl')
-    metadata_json = config.get('metadata_json')
+    data_root = config.get('data_root', 'output_eml')
     L.info(f'Rightsholder ORCiD {orcid}')
     L.info(f'Using {node} at {mn_url}')
-    L.info(f'Root path: {DATA_ROOT}')
+    L.info(f'Metadata path: {DATA_ROOT}')
     # Create the Member Node Client
     client: MemberNodeClient_2_0 = create_client(mn_url, auth_token=auth_token)
-    articles = get_article_list(metadata_json)
-    L.info(f'Found {len(articles)} metadata records')
-    upload_manager(articles=articles, orcid=orcid, client=client, node=node)
+    L.info(f'Uploading EMLs from folder: {data_root}')
+    upload_metadata_to_new_packages(eml_folder=data_root, orcid=orcid, client=client, node=node)
     client._session.close()
 
 
