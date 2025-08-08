@@ -297,6 +297,7 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
     sep = '' if CN_URL.endswith('/') else '/'
     eml_dir = Path(eml_folder)
     eml_files = sorted(list(eml_dir.glob('*.xml')))
+    L.debug(f'Found {len(eml_files)} EML files in {eml_folder}')
     n = len(eml_files)
     i = 0
     er = 0
@@ -311,11 +312,13 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
         for eml_path in eml_files:
             old_eml_pid, old_resource_map_pid = None, None
             i += 1
+            L.debug(f'Processing file: {eml_path}')
             try:
                 eml_string = eml_path.read_text(encoding='utf-8')
                 # Parse packageId from EML header
                 root = ET.fromstring(eml_string)
                 package_id = root.attrib.get('packageId')
+                L.debug(f'Parsed packageId: {package_id}')
                 if not package_id:
                     L.error(f'No packageId found in {eml_path.name}, skipping.')
                     er += 1
