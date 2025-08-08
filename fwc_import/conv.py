@@ -125,13 +125,13 @@ def clean_xml_text(text):
     )
     return re.sub(RE_XML_ILLEGAL, '', text)
 
-def add_contact(parent):
+def add_contact(parent, elem_type='contact'):
     def sub(elem, tag, text, attrib=None):
         t = ET.SubElement(elem, tag, attrib=attrib or {})
         t.text = text
         return t
 
-    mp_elem = ET.SubElement(parent, f'contact')
+    mp_elem = ET.SubElement(parent, f'{elem_type}]')
     sub(mp_elem, f'organizationName', metadataProvider["organizationName"])
     addr_elem = ET.SubElement(mp_elem, f'address')
     for k in ["deliveryPoint", "city", "administrativeArea", "postalCode", "country"]:
@@ -201,6 +201,7 @@ def build_eml(row, crosswalk, fname):
                 leaf = ensure_path(eml_root, path_parts)
                 leaf.text = clean_xml_text(value)
     add_contact(dataset_elem)
+    add_contact(dataset_elem, elem_type='publisher')
     # Special handling for urls/alt identifiers
     for url_col in ["DatasetURL", "ProjectURL"]:
         url = row.get(url_col, "")
