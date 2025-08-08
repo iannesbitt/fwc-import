@@ -11,10 +11,10 @@
     "StartDate": "dataset/coverage/temporalCoverage/rangeOfDates/beginDate/calendarDate",
     "EndDate": "dataset/coverage/temporalCoverage/rangeOfDates/endDate/calendarDate",
     "StudyArea": "dataset/coverage/geographicCoverage/geographicDescription",
+    "WestBC": "dataset/coverage/geographicCoverage/boundingCoordinates/westBoundingCoordinate",
+    "EastBC": "dataset/coverage/geographicCoverage/boundingCoordinates/eastBoundingCoordinate",
     "NorthBC": "dataset/coverage/geographicCoverage/boundingCoordinates/northBoundingCoordinate",
     "SouthBC": "dataset/coverage/geographicCoverage/boundingCoordinates/southBoundingCoordinate",
-    "EastBC": "dataset/coverage/geographicCoverage/boundingCoordinates/eastBoundingCoordinate",
-    "WestBC": "dataset/coverage/geographicCoverage/boundingCoordinates/westBoundingCoordinate",
     "genus": "dataset/coverage/taxonomicCoverage/taxonomicClassification/taxonRankValue",
     "species": "dataset/coverage/taxonomicCoverage/taxonomicClassification/taxonRankValue"
 }
