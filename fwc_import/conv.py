@@ -201,17 +201,6 @@ def build_eml(row, crosswalk, fname):
                 leaf = ensure_path(eml_root, path_parts)
                 leaf.text = clean_xml_text(value)
     add_contact(dataset_elem)
-    # Special handling for DatasetID
-    additionalInfo = ET.SubElement(dataset_elem, "additionalInfo")
-    for dataset_col in ["DatasetID", "ProjectID", "SpatialResolution"]:
-        title = dataset_col if "ID" in dataset_col else "Additional Information (FWC 'SpatialResolution' field)"
-        value = row.get(dataset_col, "")
-        if pd.notna(value) and str(value).strip().lower() not in ("", "nan", "nat"):
-            title_elem = ET.SubElement(additionalInfo, "para")
-            title_elem.text = f"Legacy {title}:"
-            for para in filter(None, re.split(r'\r\n|\r|\n', value)):
-                para_elem = ET.SubElement(additionalInfo, "para")
-                para_elem.text = clean_xml_text(para)
     # Special handling for urls/alt identifiers
     for url_col in ["DatasetURL", "ProjectURL"]:
         url = row.get(url_col, "")
@@ -221,16 +210,16 @@ def build_eml(row, crosswalk, fname):
             prop_uri.text = "http://www.w3.org/2002/07/owl#sameAs"
             value_uri = ET.SubElement(annotation, "valueURI", label=str(url).strip())
             value_uri.text = str(url).strip()
-    # Special handling for process fields
-    method_step_elem = ET.SubElement(dataset_elem, "methods")
-    for field in ["Completeness", "LogicalConsistencyRpt"]:
+    # Special handling for maintenance fields
+    maintenance_elem = ET.SubElement(dataset_elem, "maintenance")
+    desc_elem = ET.SubElement(maintenance_elem, "description")
+    for field in ["DatasetID", "ProjectID", "SpatialResolution", "Completeness", "LogicalConsistencyRpt"]:
+        title = "Additional project information (FWC legacy 'SpatialResolution' field)" if "SpatialResolution" in field else field
         value = row.get(field, '')
         if pd.isna(value) or str(value).strip().lower() in ('', 'nan', 'nat'):
             continue
-        method_step = ET.SubElement(method_step_elem, "methodStep")
-        desc_elem = ET.SubElement(method_step, "description")
         title_elem = ET.SubElement(desc_elem, "title")
-        title_elem.text = field
+        title_elem.text = title
         para_elem = ET.SubElement(desc_elem, "para")
         para_elem.text = clean_xml_text(str(value))
     return eml_root, id
@@ -256,7 +245,7 @@ def main():
                 title_col = next((c for c in crosswalk if 'title' in c.lower()), None)
                 title = row.get(title_col, 'untitled') if title_col else 'untitled'
                 id = add_unique_id(id)
-                filename = f'{id}-{hyphenate(str(title)[0:118])}.xml'
+                filename = f'{id}-{hyphenate(str(title)[0:60])}.xml'
                 try:
                     write_pretty_xml(eml_tree, os.path.join(OUTPUT_DIR, filename))
                 except Exception as e:
