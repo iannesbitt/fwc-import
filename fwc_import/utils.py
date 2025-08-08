@@ -55,11 +55,11 @@ def get_config():
     CONFIG_F = CONFIG_LOC.joinpath('config.json')
     with open(CONFIG_F, 'r') as lc:
         config = json.load(lc)
-    CONFIG = config
     # set the data root and CN URL
     DATA_ROOT = Path(config['data_root'])
     CN_URL = config['cnurl'] if config.get('cnurl') else CN_URL
-    config['metadata_json'] = str(Path(config['metadata_json']).expanduser().absolute())
+    config['metadata_loc'] = str(Path(config['metadata_loc']).expanduser().absolute())
+    CONFIG = config
     return config
 
 
