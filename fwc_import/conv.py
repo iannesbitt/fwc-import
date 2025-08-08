@@ -131,7 +131,7 @@ def add_contact(parent, elem_type='contact'):
         t.text = text
         return t
 
-    mp_elem = ET.SubElement(parent, f'{elem_type}]')
+    mp_elem = ET.SubElement(parent, f'{elem_type}')
     sub(mp_elem, f'organizationName', metadataProvider["organizationName"])
     addr_elem = ET.SubElement(mp_elem, f'address')
     for k in ["deliveryPoint", "city", "administrativeArea", "postalCode", "country"]:
