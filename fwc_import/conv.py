@@ -165,6 +165,8 @@ def build_eml(row, crosswalk, fname):
         }
     )
     dataset_elem = ET.SubElement(eml_root, f'dataset')
+    alt_id_elem = ET.SubElement(dataset_elem, f'alternateIdentifier')
+    alt_id_elem.text = id
     for col, eml_path in crosswalk.items():
         value = str(row.get(col, '')).replace(' 00:00:00', '')
         if col == "SubunitID":

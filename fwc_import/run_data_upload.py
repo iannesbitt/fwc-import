@@ -15,6 +15,7 @@ from .defs import fmts, CN_URL, DATA_ROOT, WORK_LOC
 from .utils import load_uploads, save_uploads, \
             get_token, get_config, create_client, \
             generate_access_policy
+from .conv import write_pretty_xml
 
 rpt_txt = """
 Package creation report:
@@ -167,12 +168,13 @@ def get_filepaths(files: list, doidir: Path):
     return paths
 
 
-def upload_eml(orcid: str, doi: str, eml: str, client: MemberNodeClient_2_0):
+def upload_eml(orcid: str, doi: str, rpid: str, eml: str, client: MemberNodeClient_2_0):
     """
     Upload the EML to the Member Node.
     
     :param str orcid: The ORCID of the uploader.
-    :param str doi: The DOI of the article.
+    :param str doi: The identifier of the article.
+    :param str rpid: The UUID to use.
     :param str eml: The EML to upload.
     :param client: The Member Node client.
     :type client: MemberNodeClient_2_0
@@ -180,7 +182,7 @@ def upload_eml(orcid: str, doi: str, eml: str, client: MemberNodeClient_2_0):
     :rtype: str
     """
     L = getLogger(__name__)
-    eml_pid = f"urn:uuid:{str(uuid.uuid4())}"
+    eml_pid = rpid if rpid else client.generateIdentifier(scheme="UUID")
     eml_bytes = eml.encode("utf-8")
     eml_sm, eml_md5, eml_size = generate_system_metadata(pid=eml_pid,
                                                          sid=doi,
@@ -227,7 +229,7 @@ def generate_resource_map(eml_pid: str, data_pids: list):
     return resource_map
 
 
-def upload_resource_map(doi: str, resource_map: ResourceMap, client: MemberNodeClient_2_0, orcid: str):
+def upload_resource_map(doi: str, rpid: str, resource_map: ResourceMap, client: MemberNodeClient_2_0, orcid: str):
     """
     Upload the resource map to the Member Node.
 
@@ -240,7 +242,8 @@ def upload_resource_map(doi: str, resource_map: ResourceMap, client: MemberNodeC
     :rtype: str
     """
     L = getLogger(__name__)
-    resource_map_pid = resource_map.getResourceMapPid()
+    resource_map_pid = f"resource_map_{rpid}" if rpid else client.generateIdentifier(scheme="UUID", fragment="resource_map_")
+    L.debug(f'Using resource map PID: {resource_map_pid}')
     resource_map_bytes = resource_map.serialize(format="xml")
     resource_map_sm, resource_map_md5, resource_map_size = generate_system_metadata(pid=resource_map_pid,
                                                                                     sid=doi,
@@ -317,7 +320,13 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
                 eml_string = eml_path.read_text(encoding='utf-8')
                 # Parse packageId from EML header
                 root = ET.fromstring(eml_string)
-                package_id = root.attrib.get('packageId')
+                # Get the content of the first alternateIdentifier tag
+                alt_id_elem = root.find('.//alternateIdentifier')
+                package_id = alt_id_elem.text if alt_id_elem is not None else None
+                rpid = client.generateIdentifier(scheme="UUID")
+                root.attrib['packageId'] = str(rpid)
+                eml_string = ET.tostring(root, encoding='unicode')
+                eml_string = write_pretty_xml(eml_string)
                 L.debug(f'Parsed packageId: {package_id}')
                 if not package_id:
                     L.error(f'No packageId found in {eml_path.name}, skipping.')
@@ -332,7 +341,7 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
                 else:
                     if not uploads.get(package_id):
                         uploads[package_id] = {}
-                eml_pid, eml_md5, eml_size = upload_eml(orcid, package_id, eml_string, client)
+                eml_pid, eml_md5, eml_size = upload_eml(orcid, package_id, rpid, eml_string, client)
                 if old_eml_pid:
                     L.info(f'{package_id} Adding obsoletedBy to old EML sysmeta object: {old_eml_pid}')
                     sysmeta_obsolete_updates(client, old_eml_pid, eml_pid)
@@ -355,6 +364,7 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
                         L.info(f'{package_id} Found previous resource map: {old_resource_map_pid}')
                     resource_map_pid, resource_map_md5, resource_map_size = upload_resource_map(
                         doi=package_id,
+                        rpid=rpid,
                         resource_map=resource_map,
                         client=client,
                         orcid=orcid,
