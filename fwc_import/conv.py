@@ -213,18 +213,17 @@ def build_eml(row, crosswalk, fname):
             prop_uri.text = "http://www.w3.org/2002/07/owl#sameAs"
             value_uri = ET.SubElement(annotation, "valueURI", label=str(url).strip())
             value_uri.text = str(url).strip()
-    # Special handling for maintenance fields
-    maintenance_elem = ET.SubElement(dataset_elem, "maintenance")
-    desc_elem = ET.SubElement(maintenance_elem, "description")
+    # Special handling for methods fields
+    addinfo_elem = ET.SubElement(dataset_elem, "methods")
+    methodstep_elem = ET.SubElement(addinfo_elem, "methodStep")
+    desc_elem = ET.SubElement(methodstep_elem, "description")
     for field in ["DatasetID", "ProjectID", "SpatialResolution", "Completeness", "LogicalConsistencyRpt"]:
         title = "Additional project information (FWC legacy 'SpatialResolution' field)" if "SpatialResolution" in field else field
         value = row.get(field, '')
         if pd.isna(value) or str(value).strip().lower() in ('', 'nan', 'nat'):
             continue
-        title_elem = ET.SubElement(desc_elem, "title")
-        title_elem.text = title
-        para_elem = ET.SubElement(desc_elem, "para")
-        para_elem.text = clean_xml_text(str(value))
+        obj_elem = ET.SubElement(desc_elem, "para")
+        obj_elem.text = f"{title}: {clean_xml_text(str(value))}"
     return eml_root, id
 
 def write_pretty_xml(element, filename):
