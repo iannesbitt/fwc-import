@@ -135,7 +135,6 @@ def add_contact(parent, elem_type='contact'):
     addr_elem = ET.SubElement(mp_elem, f'address')
     for k in ["deliveryPoint", "city", "administrativeArea", "postalCode", "country"]:
         sub(addr_elem, f'{k}', metadataProvider["address"][k])
-    sub(mp_elem, f'phone', metadataProvider["phone"], attrib={"phonetype": "voice"})
     sub(mp_elem, f'electronicMailAddress', metadataProvider["electronicMailAddress"])
     sub(mp_elem, f'onlineUrl', metadataProvider["onlineUrl"])
 
