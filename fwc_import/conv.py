@@ -184,7 +184,7 @@ def build_eml(row, crosswalk, fname):
                 if len(names) == 2:
                     given_name, sur_name = names[0].strip(), names[1].strip()
                 else:
-                    given_name, sur_name = ' '.join(names[0:]).strip(), names[1].strip()
+                    given_name, sur_name = ' '.join(names[0:-1]).strip(), names[-1].strip()
                 creator_elem = ET.SubElement(dataset_elem, "creator")
                 name_elem = ET.SubElement(creator_elem, "individualName")
                 ET.SubElement(name_elem, "givenName").text = clean_xml_text(given_name)
