@@ -212,7 +212,7 @@ def build_eml(row, crosswalk, fname):
     start_date = str(row.get("StartDate", '')).replace(' 00:00:00', '').strip()
     end_date = str(row.get("EndDate", '')).replace(' 00:00:00', '').strip()
     temporal_path = "dataset/coverage/temporalCoverage"
-    if start_date:
+    if start_date and (not start_date in ('', 'nan', 'nat')):
         if pd.isna(end_date) or str(end_date).strip().lower() in ('', 'nan', 'nat'):
             tc_elem = ensure_path(eml_root, temporal_path.split('/'))
             # Add singleDateTime
