@@ -7,8 +7,6 @@
     "Description": "dataset/abstract",
     "ProjectURL": "dataset/distribution scope='document'/online/url function='information'",
     "DatasetURL": "dataset/distribution scope='dataset'/online/url function='information'",
-    "StartDate": "dataset/coverage/temporalCoverage/rangeOfDates/beginDate/calendarDate",
-    "EndDate": "dataset/coverage/temporalCoverage/rangeOfDates/endDate/calendarDate",
     "StudyArea": "dataset/coverage/geographicCoverage/geographicDescription",
     "WestBC": "dataset/coverage/geographicCoverage/boundingCoordinates/westBoundingCoordinate",
     "EastBC": "dataset/coverage/geographicCoverage/boundingCoordinates/eastBoundingCoordinate",

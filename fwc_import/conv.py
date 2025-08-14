@@ -165,28 +165,7 @@ def build_eml(row, crosswalk, fname):
     dataset_elem = ET.SubElement(eml_root, f'dataset')
     alt_id_elem = ET.SubElement(dataset_elem, f'alternateIdentifier')
     alt_id_elem.text = id
-    # Special handling for temporalCoverage: if StartDate exists and EndDate does not, use singleDateTime
-    start_date = str(row.get("StartDate", '')).replace(' 00:00:00', '')
-    end_date = str(row.get("EndDate", '')).replace(' 00:00:00', '')
-    temporal_path = "dataset/coverage/temporalCoverage"
-    if start_date and (pd.isna(end_date) or str(end_date).strip().lower() in ('', 'nan', 'nat')):
-        # Remove any existing rangeOfDates if present
-        tc_elem = ensure_path(eml_root, temporal_path.split('/'))
-        for child in list(tc_elem):
-            if child.tag.endswith('rangeOfDates'):
-                tc_elem.remove(child)
-        # Add singleDateTime
-        sdt_elem = ET.SubElement(tc_elem, "singleDateTime")
-        cal_elem = ET.SubElement(sdt_elem, "calendarDate")
-        cal_elem.text = clean_xml_text(start_date)
-        # Remove StartDate and EndDate from further processing
-        skip_cols = {"StartDate", "EndDate"}
-    else:
-        skip_cols = set()
-
     for col, eml_path in crosswalk.items():
-        if col in skip_cols:
-            continue
         value = str(row.get(col, '')).replace(' 00:00:00', '')
         if col == "SubunitID":
             value = SUBUNIT.get(int(value), value)
@@ -232,6 +211,24 @@ def build_eml(row, crosswalk, fname):
             prop_uri.text = "http://www.w3.org/2002/07/owl#sameAs"
             value_uri = ET.SubElement(annotation, "valueURI", label=str(url).strip())
             value_uri.text = str(url).strip()
+        # Special handling for temporalCoverage: if StartDate exists and EndDate does not, use singleDateTime
+    start_date = str(row.get("StartDate", '')).replace(' 00:00:00', '')
+    end_date = str(row.get("EndDate", '')).replace(' 00:00:00', '')
+    temporal_path = "dataset/coverage/temporalCoverage"
+    if start_date and (pd.isna(end_date) or str(end_date).strip().lower() in ('', 'nan', 'nat')):
+        tc_elem = ensure_path(eml_root, temporal_path.split('/'))
+        # Add singleDateTime
+        sdt_elem = ET.SubElement(tc_elem, "singleDateTime")
+        cal_elem = ET.SubElement(sdt_elem, "calendarDate")
+        cal_elem.text = clean_xml_text(start_date)
+    else:
+        # If both dates are present, use rangeOfDates
+        tc_elem = ensure_path(eml_root, temporal_path.split('/'))
+        rod_elem = ET.SubElement(tc_elem, "rangeOfDates")
+        start_elem = ET.SubElement(rod_elem, "beginDate")
+        start_elem.text = clean_xml_text(start_date)
+        end_elem = ET.SubElement(rod_elem, "endDate")
+        end_elem.text = clean_xml_text(end_date)
     # Special handling for methods fields
     addinfo_elem = ET.SubElement(dataset_elem, "methods")
     methodstep_elem = ET.SubElement(addinfo_elem, "methodStep")
