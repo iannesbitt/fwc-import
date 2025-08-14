@@ -206,11 +206,8 @@ def build_eml(row, crosswalk, fname):
     for url_col in ["DatasetURL", "ProjectURL"]:
         url = row.get(url_col, "")
         if pd.notna(url) and str(url).strip().lower() not in ("", "nan", "nat"):
-            annotation = ET.SubElement(dataset_elem, "annotation")
-            prop_uri = ET.SubElement(annotation, "propertyURI", label="sameAs")
-            prop_uri.text = "http://www.w3.org/2002/07/owl#sameAs"
-            value_uri = ET.SubElement(annotation, "valueURI", label=str(url).strip())
-            value_uri.text = str(url).strip()
+            alternateIdentifier = ET.SubElement(dataset_elem, "alternateIdentifier")
+            alternateIdentifier.text = str(url).strip()
         # Special handling for temporalCoverage: if StartDate exists and EndDate does not, use singleDateTime
     start_date = str(row.get("StartDate", '')).replace(' 00:00:00', '')
     end_date = str(row.get("EndDate", '')).replace(' 00:00:00', '')
