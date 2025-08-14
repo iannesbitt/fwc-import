@@ -209,25 +209,26 @@ def build_eml(row, crosswalk, fname):
     add_contact(dataset_elem)
     add_contact(dataset_elem, elem_type='publisher')
     # Special handling for temporalCoverage: if StartDate exists and EndDate does not, use singleDateTime
-    start_date = str(row.get("StartDate", '')).replace(' 00:00:00', '')
-    end_date = str(row.get("EndDate", '')).replace(' 00:00:00', '')
+    start_date = str(row.get("StartDate", '')).replace(' 00:00:00', '').strip()
+    end_date = str(row.get("EndDate", '')).replace(' 00:00:00', '').strip()
     temporal_path = "dataset/coverage/temporalCoverage"
-    if start_date and (pd.isna(end_date) or str(end_date).strip().lower() in ('', 'nan', 'nat')):
-        tc_elem = ensure_path(eml_root, temporal_path.split('/'))
-        # Add singleDateTime
-        sdt_elem = ET.SubElement(tc_elem, "singleDateTime")
-        cal_elem = ET.SubElement(sdt_elem, "calendarDate")
-        cal_elem.text = clean_xml_text(start_date)
-    else:
-        # If both dates are present, use rangeOfDates
-        tc_elem = ensure_path(eml_root, temporal_path.split('/'))
-        rod_elem = ET.SubElement(tc_elem, "rangeOfDates")
-        start_elem = ET.SubElement(rod_elem, "beginDate")
-        cal_elem = ET.SubElement(start_elem, "calendarDate")
-        cal_elem.text = clean_xml_text(start_date)
-        end_elem = ET.SubElement(rod_elem, "endDate")
-        cal_elem = ET.SubElement(end_elem, "calendarDate")
-        cal_elem.text = clean_xml_text(end_date)
+    if start_date:
+        if pd.isna(end_date) or str(end_date).strip().lower() in ('', 'nan', 'nat'):
+            tc_elem = ensure_path(eml_root, temporal_path.split('/'))
+            # Add singleDateTime
+            sdt_elem = ET.SubElement(tc_elem, "singleDateTime")
+            cal_elem = ET.SubElement(sdt_elem, "calendarDate")
+            cal_elem.text = clean_xml_text(start_date)
+        else:
+            # If both dates are present, use rangeOfDates
+            tc_elem = ensure_path(eml_root, temporal_path.split('/'))
+            rod_elem = ET.SubElement(tc_elem, "rangeOfDates")
+            start_elem = ET.SubElement(rod_elem, "beginDate")
+            cal_elem = ET.SubElement(start_elem, "calendarDate")
+            cal_elem.text = clean_xml_text(start_date)
+            end_elem = ET.SubElement(rod_elem, "endDate")
+            cal_elem = ET.SubElement(end_elem, "calendarDate")
+            cal_elem.text = clean_xml_text(end_date)
     # Special handling for methods fields
     addinfo_elem = ET.SubElement(dataset_elem, "methods")
     methodstep_elem = ET.SubElement(addinfo_elem, "methodStep")
