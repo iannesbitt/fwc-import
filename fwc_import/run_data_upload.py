@@ -182,7 +182,7 @@ def upload_eml(orcid: str, doi: str, rpid: str, eml: str, client: MemberNodeClie
     :rtype: str
     """
     L = getLogger(__name__)
-    eml_pid = rpid if rpid else client.generateIdentifier(scheme="UUID")
+    eml_pid = rpid if rpid else client.generateIdentifier(scheme="UUID", fragment="urn:uuid:").value()
     eml_bytes = eml.encode("utf-8")
     eml_sm, eml_md5, eml_size = generate_system_metadata(pid=eml_pid,
                                                          sid=doi,
@@ -209,7 +209,7 @@ def upload_eml(orcid: str, doi: str, rpid: str, eml: str, client: MemberNodeClie
         return None
 
 
-def generate_resource_map(eml_pid: str, data_pids: list):
+def generate_resource_map(eml_pid: str, rm_pid: str, data_pids: list):
     """
     Generate the resource map XML for the given DOI, EML PID, and data PIDs.
 
@@ -221,7 +221,7 @@ def generate_resource_map(eml_pid: str, data_pids: list):
     """
     L = getLogger(__name__)
     resource_map: ResourceMap = createSimpleResourceMap(
-        ore_pid=f"resource_map_urn:uuid:{str(uuid.uuid4())}",
+        ore_pid=rm_pid,
         scimeta_pid=eml_pid,
         sciobj_pid_list=data_pids,
     )
@@ -229,7 +229,7 @@ def generate_resource_map(eml_pid: str, data_pids: list):
     return resource_map
 
 
-def upload_resource_map(doi: str, rpid: str, resource_map: ResourceMap, client: MemberNodeClient_2_0, orcid: str):
+def upload_resource_map(doi: str, rm_pid: str, resource_map: ResourceMap, client: MemberNodeClient_2_0, orcid: str):
     """
     Upload the resource map to the Member Node.
 
@@ -242,7 +242,7 @@ def upload_resource_map(doi: str, rpid: str, resource_map: ResourceMap, client: 
     :rtype: str
     """
     L = getLogger(__name__)
-    resource_map_pid = f"resource_map_{rpid}" if rpid else client.generateIdentifier(scheme="UUID", fragment="resource_map_")
+    resource_map_pid = rm_pid if rm_pid else client.generateIdentifier(scheme="UUID", fragment="resource_map_urn:uuid:").value()
     L.debug(f'Using resource map PID: {resource_map_pid}')
     resource_map_bytes = resource_map.serialize(format="xml")
     resource_map_sm, resource_map_md5, resource_map_size = generate_system_metadata(pid=resource_map_pid,
@@ -323,10 +323,10 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
                 # Get the content of the first alternateIdentifier tag
                 alt_id_elem = root.find('.//alternateIdentifier')
                 package_id = alt_id_elem.text if alt_id_elem is not None else None
-                rpid = client.generateIdentifier(scheme="UUID")
+                rpid = client.generateIdentifier(scheme="UUID", fragment="urn:uuid:").value()
                 root.attrib['packageId'] = str(rpid)
-                eml_string = ET.tostring(root, encoding='unicode')
-                eml_string = write_pretty_xml(eml_string)
+                write_pretty_xml(root, eml_path)
+                eml_string = eml_path.read_text(encoding='utf-8')
                 L.debug(f'Parsed packageId: {package_id}')
                 if not package_id:
                     L.error(f'No packageId found in {eml_path.name}, skipping.')
@@ -357,14 +357,15 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
                     }
                     save_uploads(uploads, fp=uploads_loc)
                     # Generate the DataONE resource map (with only the EML PID)
+                    rm_pid = f"resource_map_{rpid}" if rpid else client.generateIdentifier(scheme="UUID", fragment="resource_map_urn:uuid:").value()
                     pid_list = [eml_pid]
-                    resource_map = generate_resource_map(eml_pid=eml_pid, data_pids=pid_list)
+                    resource_map = generate_resource_map(eml_pid=eml_pid, rm_pid=rm_pid, data_pids=pid_list)
                     if uploads[package_id].get('resource_map'):
                         old_resource_map_pid = uploads[package_id]['resource_map']['identifier']
                         L.info(f'{package_id} Found previous resource map: {old_resource_map_pid}')
                     resource_map_pid, resource_map_md5, resource_map_size = upload_resource_map(
                         doi=package_id,
-                        rpid=rpid,
+                        rm_pid=rm_pid,
                         resource_map=resource_map,
                         client=client,
                         orcid=orcid,

@@ -56,7 +56,6 @@ metadataProvider = {
         "postalCode": "32399-1600",
         "country": "USA"
     },
-    "phone": "+1 (850) 488-4676",
     "electronicMailAddress": "metadata@myfwc.com",
     "onlineUrl": "https://myfwc.com",
 }
