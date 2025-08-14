@@ -6,7 +6,7 @@
     "PubDate": "dataset/pubDate",
     "Description": "dataset/abstract",
     "ProjectURL": "dataset/distribution scope='document'/online/url function='information'",
-    "DatasetURL": "dataset/distribution scope='dataset'/online/url function='information'",
+    "DatasetURL": "dataset/distribution scope='document'/online/url function='information'",
     "StudyArea": "dataset/coverage/geographicCoverage/geographicDescription",
     "WestBC": "dataset/coverage/geographicCoverage/boundingCoordinates/westBoundingCoordinate",
     "EastBC": "dataset/coverage/geographicCoverage/boundingCoordinates/eastBoundingCoordinate",
