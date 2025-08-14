@@ -325,7 +325,7 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
                 package_id = alt_id_elem.text if alt_id_elem is not None else None
                 rpid = client.generateIdentifier(scheme="UUID", fragment="urn:uuid:").value()
                 root.attrib['packageId'] = str(rpid)
-                write_pretty_xml(root, eml_path)
+                write_pretty_xml(root, eml_path, repretty=False)
                 eml_string = eml_path.read_text(encoding='utf-8')
                 L.debug(f'Parsed packageId: {package_id}')
                 if not package_id:

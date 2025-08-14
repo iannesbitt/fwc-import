@@ -224,10 +224,14 @@ def build_eml(row, crosswalk, fname):
         obj_elem.text = f"{title}: {clean_xml_text(str(value))}"
     return eml_root, id
 
-def write_pretty_xml(element, filename):
+def write_pretty_xml(element, filename, repretty=True):
     rough_string = ET.tostring(element, encoding='utf-8')
     reparsed = xml.dom.minidom.parseString(rough_string)
-    pretty_xml = reparsed.toprettyxml(indent="  ", encoding='utf-8')
+    if repretty:
+        pretty_xml = reparsed.toprettyxml(indent="  ", encoding='utf-8')
+    else:
+        # it's already pretty, just convert to bytes
+        pretty_xml = reparsed.toxml(encoding='utf-8')
     with open(filename, 'wb') as f:
         f.write(pretty_xml)
 
