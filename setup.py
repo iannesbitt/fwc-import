@@ -18,6 +18,8 @@ setuptools.setup(
         'dataone.common',
         'dataone.libclient',
         'pyld',
+        'pandas',
+        'openpyxl',
     ],
     extras_require={
         'dev': [
