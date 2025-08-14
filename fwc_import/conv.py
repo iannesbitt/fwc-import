@@ -165,6 +165,12 @@ def build_eml(row, crosswalk, fname):
     dataset_elem = ET.SubElement(eml_root, f'dataset')
     alt_id_elem = ET.SubElement(dataset_elem, f'alternateIdentifier')
     alt_id_elem.text = id
+    # Special handling for urls/alt identifiers
+    for url_col in ["DatasetURL", "ProjectURL"]:
+        url = row.get(url_col, "")
+        if pd.notna(url) and str(url).strip().lower() not in ("", "nan", "nat"):
+            alternateIdentifier = ET.SubElement(dataset_elem, "alternateIdentifier")
+            alternateIdentifier.text = str(url).strip()
     for col, eml_path in crosswalk.items():
         value = str(row.get(col, '')).replace(' 00:00:00', '')
         if col == "SubunitID":
@@ -202,13 +208,7 @@ def build_eml(row, crosswalk, fname):
                 leaf.text = clean_xml_text(value)
     add_contact(dataset_elem)
     add_contact(dataset_elem, elem_type='publisher')
-    # Special handling for urls/alt identifiers
-    for url_col in ["DatasetURL", "ProjectURL"]:
-        url = row.get(url_col, "")
-        if pd.notna(url) and str(url).strip().lower() not in ("", "nan", "nat"):
-            alternateIdentifier = ET.SubElement(dataset_elem, "alternateIdentifier")
-            alternateIdentifier.text = str(url).strip()
-        # Special handling for temporalCoverage: if StartDate exists and EndDate does not, use singleDateTime
+    # Special handling for temporalCoverage: if StartDate exists and EndDate does not, use singleDateTime
     start_date = str(row.get("StartDate", '')).replace(' 00:00:00', '')
     end_date = str(row.get("EndDate", '')).replace(' 00:00:00', '')
     temporal_path = "dataset/coverage/temporalCoverage"
