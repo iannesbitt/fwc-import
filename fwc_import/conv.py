@@ -226,9 +226,11 @@ def build_eml(row, crosswalk, fname):
         tc_elem = ensure_path(eml_root, temporal_path.split('/'))
         rod_elem = ET.SubElement(tc_elem, "rangeOfDates")
         start_elem = ET.SubElement(rod_elem, "beginDate")
-        start_elem.text = clean_xml_text(start_date)
+        cal_elem = ET.SubElement(start_elem, "calendarDate")
+        cal_elem.text = clean_xml_text(start_date)
         end_elem = ET.SubElement(rod_elem, "endDate")
-        end_elem.text = clean_xml_text(end_date)
+        cal_elem = ET.SubElement(end_elem, "calendarDate")
+        cal_elem.text = clean_xml_text(end_date)
     # Special handling for methods fields
     addinfo_elem = ET.SubElement(dataset_elem, "methods")
     methodstep_elem = ET.SubElement(addinfo_elem, "methodStep")
