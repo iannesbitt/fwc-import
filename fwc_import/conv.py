@@ -165,7 +165,28 @@ def build_eml(row, crosswalk, fname):
     dataset_elem = ET.SubElement(eml_root, f'dataset')
     alt_id_elem = ET.SubElement(dataset_elem, f'alternateIdentifier')
     alt_id_elem.text = id
+    # Special handling for temporalCoverage: if StartDate exists and EndDate does not, use singleDateTime
+    start_date = str(row.get("StartDate", '')).replace(' 00:00:00', '')
+    end_date = str(row.get("EndDate", '')).replace(' 00:00:00', '')
+    temporal_path = "dataset/coverage/temporalCoverage"
+    if start_date and (pd.isna(end_date) or str(end_date).strip().lower() in ('', 'nan', 'nat')):
+        # Remove any existing rangeOfDates if present
+        tc_elem = ensure_path(eml_root, temporal_path.split('/'))
+        for child in list(tc_elem):
+            if child.tag.endswith('rangeOfDates'):
+                tc_elem.remove(child)
+        # Add singleDateTime
+        sdt_elem = ET.SubElement(tc_elem, "singleDateTime")
+        cal_elem = ET.SubElement(sdt_elem, "calendarDate")
+        cal_elem.text = clean_xml_text(start_date)
+        # Remove StartDate and EndDate from further processing
+        skip_cols = {"StartDate", "EndDate"}
+    else:
+        skip_cols = set()
+
     for col, eml_path in crosswalk.items():
+        if col in skip_cols:
+            continue
         value = str(row.get(col, '')).replace(' 00:00:00', '')
         if col == "SubunitID":
             value = SUBUNIT.get(int(value), value)
