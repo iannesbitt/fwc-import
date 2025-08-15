@@ -49,6 +49,10 @@ A dictionary of FWC subunit IDs.
 
 ID_TABLE = set()
 
+EML_NS = 'https://eml.ecoinformatics.org/eml-2.2.0'
+XSI_NS = 'http://www.w3.org/2001/XMLSchema-instance'
+STMML_NS = 'http://www.xml-cml.org/schema/stmml-1.1'
+
 metadataProvider = {
     "organizationName": "Florida Fish and Wildlife Conservation Commission",
     "address": {
@@ -141,6 +145,12 @@ def add_contact(parent, elem_type='contact'):
     sub(mp_elem, f'onlineUrl', metadataProvider["onlineUrl"])
 
 
+def register_namespaces():
+    ET.register_namespace('eml', EML_NS)
+    ET.register_namespace('xsi', XSI_NS)
+    ET.register_namespace('stmml', STMML_NS)
+
+
 def build_eml(row, crosswalk, fname):
     source = "fwc-fwri" if 'fwri' in fname.lower() else "fwc-hsc"
     id = row.get("DatasetID", "") or row.get("ProjectID", "")
@@ -149,15 +159,11 @@ def build_eml(row, crosswalk, fname):
         id = f"{source}.no-id.1"
     else:
         id = f"{source}.{id.strip().replace(' ', '-').lower()}.1"
-    EML_NS = 'https://eml.ecoinformatics.org/eml-2.2.0'
-    XSI_NS = 'http://www.w3.org/2001/XMLSchema-instance'
-    STMML_NS = 'http://www.xml-cml.org/schema/stmml-1.1'
-    ET.register_namespace('eml', EML_NS)
-    ET.register_namespace('xsi', XSI_NS)
-    ET.register_namespace('stmml', STMML_NS)
+    register_namespaces()
     eml_root = ET.Element(
-        f'{{{EML_NS}}}eml',
+        f'{EML_NS}eml',
         {
+            'xmlns:eml': EML_NS,
             'xmlns:xsi': XSI_NS,
             'xmlns:stmml': STMML_NS,
             'packageId': f"{id}",

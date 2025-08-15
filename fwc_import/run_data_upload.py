@@ -15,7 +15,7 @@ from .defs import fmts, CN_URL, DATA_ROOT, WORK_LOC
 from .utils import load_uploads, save_uploads, \
             get_token, get_config, create_client, \
             generate_access_policy
-from .conv import write_pretty_xml
+from .conv import write_pretty_xml, register_namespaces
 
 rpt_txt = """
 Package creation report:
@@ -307,6 +307,7 @@ def upload_metadata_to_new_packages(eml_folder: str, orcid: str, client: MemberN
     succ_list = []
     err_list = []
     uploads_loc = Path(WORK_LOC / f'{node}.json')
+    register_namespaces()
     try:
         uploads = load_uploads(uploads_loc)
     except FileNotFoundError:
