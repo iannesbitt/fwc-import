@@ -52,6 +52,7 @@ ID_TABLE = set()
 EML_NS = 'https://eml.ecoinformatics.org/eml-2.2.0'
 XSI_NS = 'http://www.w3.org/2001/XMLSchema-instance'
 STMML_NS = 'http://www.xml-cml.org/schema/stmml-1.1'
+XSI_schemaLocation = 'https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd'
 
 metadataProvider = {
     "organizationName": "Florida Fish and Wildlife Conservation Commission",
@@ -165,6 +166,7 @@ def build_eml(row, crosswalk, fname):
         {
             'xmlns:xsi': XSI_NS,
             'xmlns:stmml': STMML_NS,
+            'xsi:schemaLocation': XSI_schemaLocation,
             'packageId': f"{id}",
             'system': 'knb'
         }
