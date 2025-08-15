@@ -161,9 +161,8 @@ def build_eml(row, crosswalk, fname):
         id = f"{source}.{id.strip().replace(' ', '-').lower()}.1"
     register_namespaces()
     eml_root = ET.Element(
-        f'{EML_NS}eml',
+        f'{{{EML_NS}}}eml',
         {
-            'xmlns:eml': EML_NS,
             'xmlns:xsi': XSI_NS,
             'xmlns:stmml': STMML_NS,
             'packageId': f"{id}",
