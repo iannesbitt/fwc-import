@@ -28,6 +28,7 @@ setuptools.setup(
     },
     entry_points = {
         'console_scripts': [
+            'fwcconvert=fwc_import.conv:main',
             'fwcimport=fwc_import.run_data_upload:run_data_upload',
             'testfwcimport=fwc_import.test:main'
         ],
