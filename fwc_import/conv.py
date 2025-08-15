@@ -5,6 +5,8 @@ import xml.etree.ElementTree as ET
 import xml.dom.minidom
 import re
 
+from .utils import parse_name
+
 CROSSWALK_FILE = './fwc_import/manifest/fwc_crosswalk.json'
 SHEETS_DIR = './fwc_import/manifest/meta'
 OUTPUT_DIR = './output_eml'
@@ -180,11 +182,7 @@ def build_eml(row, crosswalk, fname):
         if col.lower() == "principalinvestigator":
             # split name into givenName and surName
             if pd.notna(value) and str(value).strip().lower() not in ("", "nan", "nat"):
-                names = value.split(' ')
-                if len(names) == 2:
-                    given_name, sur_name = names[0].strip(), names[1].strip()
-                else:
-                    given_name, sur_name = ' '.join(names[0:-1]).strip(), names[-1].strip()
+                given_name, sur_name = parse_name(value)
                 creator_elem = ET.SubElement(dataset_elem, "creator")
                 name_elem = ET.SubElement(creator_elem, "individualName")
                 ET.SubElement(name_elem, "givenName").text = clean_xml_text(given_name)

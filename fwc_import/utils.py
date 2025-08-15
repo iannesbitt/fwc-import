@@ -109,7 +109,7 @@ def parse_name(fullname: str):
                 [given, family] = fullname.lower().split(q)
                 # capitalize the and concat the query string to the family name
                 given = given.title()
-                family = f'{q.strip()}{family.title()}'
+                family = f'{q.strip()} {family.title()}'
     if (given == None) and (family == None):
         # split the fullname by space and capitalize each part
         nlist = fullname.title().split()
